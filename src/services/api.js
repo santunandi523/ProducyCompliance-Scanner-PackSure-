@@ -64,6 +64,8 @@ api.interceptors.response.use(
         message = "Authentication required or session expired (403 Forbidden). Please log out and log in again.";
       } else if (error.response?.status === 401) {
         message = "Unauthorized (401). Please log in with valid officer credentials.";
+      } else if (error.response?.status === 404) {
+        message = `Backend endpoint not found (404) at ${error.config?.url || API_BASE_URL}. Connecting to Standalone Cloud Demo mode.`;
       } else if (error.message === "Network Error" || !error.response) {
         const isCloudHost =
           typeof window !== "undefined" &&

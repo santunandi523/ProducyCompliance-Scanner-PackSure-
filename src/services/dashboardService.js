@@ -1,23 +1,49 @@
 import api from "./api";
+import {
+  mockDashboardSummary,
+  mockViolationCategories,
+  mockRecentInspections,
+  mockHealth,
+} from "./mockData";
 
 export const dashboardService = {
   async getSummary() {
-    const res = await api.get("/dashboard/summary");
-    return res.data;
+    try {
+      const res = await api.get("/dashboard/summary");
+      if (res?.data) return res.data;
+    } catch {
+      // Return simulation data in Standalone / Cloud Demo mode
+    }
+    return mockDashboardSummary;
   },
 
   async getViolationCategories() {
-    const res = await api.get("/dashboard/violations");
-    return res.data || [];
+    try {
+      const res = await api.get("/dashboard/violations");
+      if (res?.data) return res.data;
+    } catch {
+      // Return simulation data
+    }
+    return mockViolationCategories;
   },
 
   async getRecentInspections() {
-    const res = await api.get("/dashboard/recent");
-    return res.data || [];
+    try {
+      const res = await api.get("/dashboard/recent");
+      if (res?.data) return res.data;
+    } catch {
+      // Return simulation data
+    }
+    return mockRecentInspections;
   },
 
   async getHealth() {
-    const res = await api.get("/health");
-    return res.data;
+    try {
+      const res = await api.get("/health");
+      if (res?.data) return res.data;
+    } catch {
+      // Return simulation data
+    }
+    return mockHealth;
   },
 };

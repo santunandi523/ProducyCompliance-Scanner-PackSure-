@@ -146,6 +146,14 @@ export default function DashboardLayout() {
           </div>
 
           <div className="flex items-center gap-3.5">
+            {/* Standalone Cloud Demo Mode indicator */}
+            {typeof window !== "undefined" && localStorage.getItem("packsure_demo_mode") === "true" && (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono bg-[#7C3AED]/20 text-[#C084FC] border border-[#7C3AED]/40" title="Running in Standalone Cloud Demo mode with emulated PCR 2011 records. Connect backend via VITE_API_BASE_URL to enable real-time local OCR.">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#A855F7] animate-ping" />
+                Cloud Preview Mode
+              </span>
+            )}
+
             {/* Quick action button in header */}
             <button
               onClick={() => navigate("/scan")}
