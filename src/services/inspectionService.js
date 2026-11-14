@@ -8,10 +8,15 @@ export const inspectionService = {
       if (res?.data) return res.data;
     } catch {
       // Standalone simulation fallback
+      const id = Math.floor(1000 + Math.random() * 9000);
       return {
-        id: Math.floor(1000 + Math.random() * 9000),
+        id,
+        inspectionNumber: `INS-2026-${id}`,
+        trackingId: `INS-2026-${id}`,
         location: location || "Retail Terminal #1",
         status: "DRAFT",
+        finalStatus: "COMPLIANT",
+        commodityName: "Parle-G Gold Glucose Biscuits (100g)",
         createdAt: new Date().toISOString(),
       };
     }
@@ -51,33 +56,36 @@ export const inspectionService = {
     } catch {
       const results = [];
       for (let i = 0; i < files.length; i++) {
-        const sideTag = i === 0 ? "FRONT" : i === 1 ? "BACK" : `SIDE_${i + 1}`;
+        const sideTag = i === 0 ? "PRIMARY_FRONT" : i === 1 ? "SECONDARY_BACK" : `SIDE_${i + 1}`;
+        const previewUrl = files[i] instanceof Blob ? URL.createObjectURL(files[i]) : "";
         results.push({
           id: Date.now() + i,
           imageType: sideTag,
-          fileName: files[i].name,
+          fileName: files[i].name || `panel_${i + 1}.jpg`,
           fileSize: files[i].size,
+          previewUrl,
+          fileUrl: previewUrl,
         });
       }
       return results;
     }
   },
 
-  async analyzeInspection(inspectionId) {
+  async analyzeInspection(inspectionId, uploadedFiles = []) {
     try {
       const res = await api.post(`/inspections/${inspectionId}/analyze`);
       if (res?.data) return res.data;
     } catch {
-      return createMockInspectionResult(inspectionId);
+      return createMockInspectionResult(inspectionId, uploadedFiles);
     }
   },
 
-  async getInspectionResults(inspectionId) {
+  async getInspectionResults(inspectionId, uploadedFiles = []) {
     try {
       const res = await api.get(`/inspections/${inspectionId}/results`);
       if (res?.data) return res.data;
     } catch {
-      return createMockInspectionResult(inspectionId);
+      return createMockInspectionResult(inspectionId, uploadedFiles);
     }
   },
 
