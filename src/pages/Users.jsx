@@ -194,7 +194,7 @@ export default function Users() {
                         <div>
                           <div className="font-bold text-white">{u.fullName || u.username}</div>
                           <div className="text-[10px] font-mono text-[#9E927C]">
-                            {u.employeeId || "LM-OFF-0101"} · {u.email || `${u.username}@packsure.gov.in`}
+                            {u.employeeId || u.badgeNumber || "LM-OFF-0101"} · {u.email || `${u.username}@packsure.gov.in`}
                           </div>
                         </div>
                       </td>
@@ -205,7 +205,7 @@ export default function Users() {
                           <span>{isAdminRole ? "Admin Officer" : "Enforcement Officer"}</span>
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 text-xs text-[#9E927C]">{u.location || "Enforcement Circle 1"}</td>
+                      <td className="px-5 py-3.5 text-xs text-[#9E927C]">{u.location || u.jurisdiction || "Enforcement Circle 1"}</td>
                       <td className="px-4 py-3.5 text-center">
                         <span className="font-mono font-bold text-white bg-[#1E1E2E] px-2.5 py-1 rounded-md text-xs border border-[#2A2A3D]">
                           {u.totalScans || 0}

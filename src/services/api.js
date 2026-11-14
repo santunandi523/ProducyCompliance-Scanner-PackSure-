@@ -53,8 +53,10 @@ api.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (error.response?.status === 403 || error.response?.status === 401) {
-      localStorage.removeItem("packsure_token");
-      localStorage.removeItem("packsure_user");
+      if (localStorage.getItem("packsure_demo_mode") !== "true") {
+        localStorage.removeItem("packsure_token");
+        localStorage.removeItem("packsure_user");
+      }
     }
 
     let message = error.response?.data?.message;
