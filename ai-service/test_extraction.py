@@ -748,6 +748,61 @@ def test_normalize_ocr_text_preserves_september():
     assert norm == "Mfg.Date: SEP.2025", f"Expected 'Mfg.Date: SEP.2025', got '{norm}'"
     print("[PASS] TEST 14: normalize_ocr_text preserves month SEP without corruption Passed")
 
+def test_realistic_multi_image_panel_extraction():
+    ocr_regions = [
+        # Image 1 (Front PDP): Brand & Net Wt
+        {'regionId': 'img-1-reg-1', 'imageId': 'img-1', 'text': 'Super Crunch Butter Cookies', 'normalizedText': 'Super Crunch Butter Cookies', 'confidence': 0.95, 'bbox': {'x': 10, 'y': 10, 'width': 80, 'height': 20, 'xPct': 10, 'yPct': 10, 'widthPct': 80, 'heightPct': 20}},
+        {'regionId': 'img-1-reg-2', 'imageId': 'img-1', 'text': 'Net Wt: 100 g', 'normalizedText': 'Net Wt: 100 g', 'confidence': 0.91, 'bbox': {'x': 10, 'y': 80, 'width': 30, 'height': 10, 'xPct': 10, 'yPct': 80, 'widthPct': 30, 'heightPct': 10}},
+
+        # Image 2 (Back Panel): Nutrition Facts & Manufacturer Details
+        {'regionId': 'img-2-reg-1', 'imageId': 'img-2', 'text': 'NUTRITIONAL INFORMATION', 'normalizedText': 'NUTRITIONAL INFORMATION', 'confidence': 0.98, 'bbox': {'x': 10, 'y': 10, 'width': 60, 'height': 10, 'xPct': 10, 'yPct': 10, 'widthPct': 60, 'heightPct': 10}},
+        {'regionId': 'img-2-reg-2', 'imageId': 'img-2', 'text': 'Serving Size: 25 g', 'normalizedText': 'Serving Size: 25 g', 'confidence': 0.97, 'bbox': {'x': 10, 'y': 20, 'width': 40, 'height': 8, 'xPct': 10, 'yPct': 20, 'widthPct': 40, 'heightPct': 8}},
+        {'regionId': 'img-2-reg-3', 'imageId': 'img-2', 'text': 'Total Fat: 15 g', 'normalizedText': 'Total Fat: 15 g', 'confidence': 0.99, 'bbox': {'x': 10, 'y': 30, 'width': 40, 'height': 8, 'xPct': 10, 'yPct': 30, 'widthPct': 40, 'heightPct': 8}},
+        {'regionId': 'img-2-reg-4', 'imageId': 'img-2', 'text': 'Protein: 6.5 g', 'normalizedText': 'Protein: 6.5 g', 'confidence': 0.98, 'bbox': {'x': 10, 'y': 40, 'width': 40, 'height': 8, 'xPct': 10, 'yPct': 40, 'widthPct': 40, 'heightPct': 8}},
+        {'regionId': 'img-2-reg-5', 'imageId': 'img-2', 'text': 'Total Sugars: 28 g', 'normalizedText': 'Total Sugars: 28 g', 'confidence': 0.98, 'bbox': {'x': 10, 'y': 50, 'width': 40, 'height': 8, 'xPct': 10, 'yPct': 50, 'widthPct': 40, 'heightPct': 8}},
+        {'regionId': 'img-2-reg-6', 'imageId': 'img-2', 'text': 'Manufactured by: PackSure Foods Pvt Ltd', 'normalizedText': 'Manufactured by: PackSure Foods Pvt Ltd', 'confidence': 0.94, 'bbox': {'x': 10, 'y': 65, 'width': 70, 'height': 10, 'xPct': 10, 'yPct': 65, 'widthPct': 70, 'heightPct': 10}},
+        {'regionId': 'img-2-reg-7', 'imageId': 'img-2', 'text': 'Plot 42, Peenya Industrial Area, Bangalore 560058', 'normalizedText': 'Plot 42, Peenya Industrial Area, Bangalore 560058', 'confidence': 0.92, 'bbox': {'x': 10, 'y': 75, 'width': 80, 'height': 10, 'xPct': 10, 'yPct': 75, 'widthPct': 80, 'heightPct': 10}},
+        {'regionId': 'img-2-reg-8', 'imageId': 'img-2', 'text': 'Customer Care: care@packsure.com Helpline: 1800-200-3000', 'normalizedText': 'Customer Care: care@packsure.com Helpline: 1800-200-3000', 'confidence': 0.95, 'bbox': {'x': 10, 'y': 85, 'width': 85, 'height': 10, 'xPct': 10, 'yPct': 85, 'widthPct': 85, 'heightPct': 10}},
+
+        # Image 3 (Side Panel): Dates, MRP stamp, and USP
+        {'regionId': 'img-3-reg-1', 'imageId': 'img-3', 'text': 'BATCH NO: PK2025', 'normalizedText': 'BATCH NO: PK2025', 'confidence': 0.93, 'bbox': {'x': 10, 'y': 15, 'width': 50, 'height': 10, 'xPct': 10, 'yPct': 15, 'widthPct': 50, 'heightPct': 10}},
+        {'regionId': 'img-3-reg-2', 'imageId': 'img-3', 'text': 'MFD: 15/09/2025', 'normalizedText': 'MFD: 15/09/2025', 'confidence': 0.92, 'bbox': {'x': 10, 'y': 30, 'width': 45, 'height': 10, 'xPct': 10, 'yPct': 30, 'widthPct': 45, 'heightPct': 10}},
+        {'regionId': 'img-3-reg-3', 'imageId': 'img-3', 'text': 'EXP: 15/03/2026', 'normalizedText': 'EXP: 15/03/2026', 'confidence': 0.93, 'bbox': {'x': 10, 'y': 45, 'width': 45, 'height': 10, 'xPct': 10, 'yPct': 45, 'widthPct': 45, 'heightPct': 10}},
+        {'regionId': 'img-3-reg-4', 'imageId': 'img-3', 'text': 'MRP Rs. 35.00', 'normalizedText': 'MRP ₹ 35.00', 'confidence': 0.91, 'bbox': {'x': 10, 'y': 60, 'width': 40, 'height': 10, 'xPct': 10, 'yPct': 60, 'widthPct': 40, 'heightPct': 10}},
+        {'regionId': 'img-3-reg-5', 'imageId': 'img-3', 'text': '(INCL. OF ALL TAXES)', 'normalizedText': '(INCL. OF ALL TAXES)', 'confidence': 0.90, 'bbox': {'x': 10, 'y': 70, 'width': 50, 'height': 10, 'xPct': 10, 'yPct': 70, 'widthPct': 50, 'heightPct': 10}},
+        {'regionId': 'img-3-reg-6', 'imageId': 'img-3', 'text': 'USP: Rs. 0.35 / g', 'normalizedText': 'USP: ₹ 0.35 / g', 'confidence': 0.99, 'bbox': {'x': 10, 'y': 80, 'width': 45, 'height': 10, 'xPct': 10, 'yPct': 80, 'widthPct': 45, 'heightPct': 10}},
+    ]
+
+    res = extract_declarations(ocr_regions)
+    res_map = {d["field"]: d for d in res}
+
+    # Verify MRP is not corrupted by USP and has no conflict
+    assert "MRP" in res_map, "MRP should be detected"
+    assert res_map["MRP"]["normalizedValue"] == "35.00", f"Expected 35.00, got {res_map['MRP']['normalizedValue']}"
+    assert res_map["MRP"]["conflictDetected"] == False, "USP should not trigger false MRP conflict"
+
+    # Verify Net Quantity is not corrupted by nutrition table
+    assert "NET_QUANTITY" in res_map, "Net Quantity should be detected"
+    assert res_map["NET_QUANTITY"]["normalizedValue"] == "100", f"Expected 100, got {res_map['NET_QUANTITY']['normalizedValue']}"
+    assert res_map["NET_QUANTITY"]["unit"] == "g", f"Expected unit g, got {res_map['NET_QUANTITY']['unit']}"
+    assert res_map["NET_QUANTITY"]["conflictDetected"] == False, "Nutrition rows should not trigger false Net Quantity conflict"
+
+    # Verify Manufacturer & Address
+    assert res_map["MANUFACTURER"]["displayValue"] == "Packsure Foods Pvt Ltd"
+    assert "Bangalore 560058" in res_map["MANUFACTURER_ADDRESS"]["displayValue"]
+
+    # Verify Country of Origin inferred from Bangalore PIN
+    assert res_map["COUNTRY_OF_ORIGIN"]["displayValue"] == "India"
+
+    # Verify Dates
+    assert res_map["MANUFACTURE_DATE"]["displayValue"] == "15/09/2025"
+    assert res_map["EXPIRY_DATE"]["displayValue"] == "15/03/2026"
+
+    # Verify Brand is not 'Nutritional Information'
+    assert res_map["BRAND"]["displayValue"] == "Super Crunch Butter Cookies"
+
+    print("[PASS] TEST 15: Realistic Multi-Image Panel Extraction Passed")
+
 if __name__ == "__main__":
     test_mrp_detection()
     test_net_quantity_detection()
@@ -775,6 +830,7 @@ if __name__ == "__main__":
     test_all_mfg_date_aliases()
     test_full_date_formats()
     test_normalize_ocr_text_preserves_september()
+    test_realistic_multi_image_panel_extraction()
     print("==================================================")
     print("ALL PYTHON AI EXTRACTION UNIT TESTS PASSED!")
     print("==================================================")

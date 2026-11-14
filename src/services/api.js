@@ -1,6 +1,19 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081/api";
+// Normalize API base URL: supports VITE_API_BASE_URL, VITE_API_URL or defaults to http://localhost:8081/api
+let rawBase = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:8081/api";
+rawBase = String(rawBase).trim().replace(/\/+$/, "");
+export const API_BASE_URL = rawBase.endsWith("/api") ? rawBase : `${rawBase}/api`;
+
+export const getImageContentUrl = (imageId) => {
+  if (!imageId) return "";
+  return `${API_BASE_URL}/inspections/images/${imageId}/content`;
+};
+
+export const getReportDownloadUrl = (reportId) => {
+  if (!reportId) return "";
+  return `${API_BASE_URL}/reports/${reportId}/download`;
+};
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -33,7 +46,7 @@ api.interceptors.response.use(
       } else if (error.response?.status === 401) {
         message = "Unauthorized (401). Please log in with valid officer credentials.";
       } else if (error.message === "Network Error" || !error.response) {
-        message = "Cannot connect to backend server (http://localhost:8081). Please ensure Spring Boot backend and database are running.";
+        message = `Cannot connect to backend server (${API_BASE_URL}). Please ensure backend service and database are running and reachable.`;
       } else {
         message = error.message || "Document analysis or server error";
       }

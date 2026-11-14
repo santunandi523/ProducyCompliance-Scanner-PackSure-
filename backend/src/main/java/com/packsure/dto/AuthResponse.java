@@ -10,7 +10,7 @@ public class AuthResponse {
 
     public AuthResponse(String token, User user) {
         this.token = token;
-        this.user = new UserDto(user.getId(), user.getUsername(), user.getFullName(), user.getRole(), user.getEmployeeId(), user.getLocation());
+        this.user = new UserDto(user.getId(), user.getUsername(), user.getFullName(), user.getEmail(), user.getRole(), user.getEmployeeId(), user.getLocation());
     }
 
     public String getToken() { return token; }
@@ -23,14 +23,16 @@ public class AuthResponse {
         private Long id;
         private String username;
         private String fullName;
+        private String email;
         private String role;
         private String employeeId;
         private String location;
 
-        public UserDto(Long id, String username, String fullName, String role, String employeeId, String location) {
+        public UserDto(Long id, String username, String fullName, String email, String role, String employeeId, String location) {
             this.id = id;
             this.username = username;
             this.fullName = fullName;
+            this.email = email;
             this.role = role;
             this.employeeId = employeeId;
             this.location = location;
@@ -39,8 +41,12 @@ public class AuthResponse {
         public Long getId() { return id; }
         public String getUsername() { return username; }
         public String getFullName() { return fullName; }
+        public String getName() { return fullName; }
+        public String getEmail() { return email; }
         public String getRole() { return role; }
         public String getEmployeeId() { return employeeId; }
         public String getLocation() { return location; }
+        public String getDepartment() { return "Legal Metrology Department"; }
+        public String getPhone() { return "+91 11 2338 9000"; }
     }
 }

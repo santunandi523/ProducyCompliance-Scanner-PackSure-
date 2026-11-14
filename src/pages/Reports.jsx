@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import PageHeader from "@/components/common/PageHeader";
 import StatusBadge from "@/components/common/StatusBadge";
 import { inspectionService } from "@/services/inspectionService";
-import { FileText, Download, Printer, Loader2 } from "lucide-react";
+import { FileText, Download, Printer, Loader2, Sparkles, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Reports() {
@@ -31,60 +31,71 @@ export default function Reports() {
     try {
       const rep = await inspectionService.generateReport(i.id);
       window.open(inspectionService.getReportDownloadUrl(rep.id), "_blank");
-      toast.success(`Generated official PDF report for ${i.inspectionNumber}`);
+      toast.success(`Generated official tamper-evident PDF report for ${i.inspectionNumber}`);
     } catch (e) {
       toast.error(e.message || "Failed to generate report");
     }
   };
 
   return (
-    <div className="max-w-[1200px] mx-auto space-y-6">
+    <div className="max-w-[1300px] mx-auto space-y-7 animate-fade-in">
       <PageHeader
-        kicker="Statutory Evidence"
-        title="Inspection Reports & Records"
-        subtitle="Every inspection produces an official signed PDF report with cryptographic SHA-256 hash for court admissibility."
+        kicker="Statutory Evidence & Records"
+        title="Official Inspection Reports"
+        subtitle="Every inspection produces an official tamper-evident PDF report with digital audit verification for legal admissibility."
       />
+
       {loading ? (
-        <div className="p-16 text-center text-slate-400">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-600 mb-2" />
-          Loading inspection records...
+        <div className="p-16 text-center text-[#8E8271]">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#F5C842] mb-2.5" />
+          <span className="text-xs">Loading inspection records...</span>
         </div>
       ) : inspections.length > 0 ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {inspections.map((i) => (
-            <div key={i.id} className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-md transition-shadow">
+            <div
+              key={i.id}
+              className="bg-[#111118] rounded-2xl border border-[#D4A017]/20 p-6 hover:border-[#D4A017]/40 transition-all duration-300 hover:-translate-y-1 shadow-xl group"
+            >
               <div className="flex items-start justify-between">
-                <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-blue-700" strokeWidth={1.75} />
+                <div className="w-12 h-12 rounded-xl bg-[#2A220A] border border-[#D4A017]/30 flex items-center justify-center text-[#F5C842] shadow-inner group-hover:scale-105 transition-transform">
+                  <FileText className="w-6 h-6" strokeWidth={1.8} />
                 </div>
                 <StatusBadge status={i.finalStatus || i.status} />
               </div>
-              <div className="mt-4 font-mono text-xs text-blue-600 font-semibold">{i.inspectionNumber}</div>
-              <div className="font-display font-bold text-slate-900 mt-0.5 truncate">
+
+              <div className="mt-5 font-mono text-xs text-[#F5C842] font-bold">
+                {i.inspectionNumber}
+              </div>
+              <div className="font-display font-black text-white text-base mt-0.5 truncate">
                 {i.product?.name || "Packaged Commodity"}
               </div>
-              <div className="text-xs text-slate-500 mt-1">
-                {i.createdAt ? new Date(i.createdAt).toLocaleDateString() : "Today"} · {i.location || "Delhi Zone"}
+              <div className="text-xs text-[#9E927C] mt-1">
+                {i.createdAt ? new Date(i.createdAt).toLocaleDateString() : "Today"} · {i.location || "Enforcement Circle 1"}
               </div>
-              <div className="flex items-center gap-2 mt-4">
+
+              <div className="flex items-center gap-2.5 mt-5 pt-4 border-t border-[#252538]">
                 <button
                   onClick={() => handleDownloadReport(i)}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-lg shadow-xs transition"
+                  className="btn-gold flex-1 flex items-center justify-center gap-1.5 text-xs font-bold py-2.5 px-3 rounded-xl shadow-md transition cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5" /> PDF (SHA-256)
+                  <Download className="w-3.5 h-3.5 text-black" />
+                  <span>Download PDF</span>
                 </button>
                 <button
                   onClick={() => window.print()}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 border border-slate-300 hover:bg-slate-50 px-3 py-2 rounded-lg transition"
+                  className="btn-dark flex items-center justify-center gap-1.5 text-xs font-bold py-2.5 px-3 rounded-xl transition cursor-pointer"
+                  title="Print Record"
                 >
-                  <Printer className="w-3.5 h-3.5" /> Print
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Print</span>
                 </button>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-400 text-xs">
+        <div className="bg-[#111118] rounded-2xl border border-[#D4A017]/20 p-16 text-center text-[#8E8271] text-xs shadow-xl">
           No inspections recorded yet. Start a new scan to generate official reports.
         </div>
       )}

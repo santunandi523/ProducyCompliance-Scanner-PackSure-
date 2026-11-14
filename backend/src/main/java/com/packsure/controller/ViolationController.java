@@ -22,17 +22,38 @@ public class ViolationController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Violation>>> getAllViolations(
-            @RequestParam(required = false) String status) {
-        List<Violation> list = (status != null && !status.isEmpty() && !"ALL".equalsIgnoreCase(status))
-                ? violationRepository.findByStatus(status.toUpperCase())
-                : violationRepository.findAllByOrderByCreatedAtDesc();
+            @RequestParam(required = false) String status,
+            @AuthenticationPrincipal User user) {
+        boolean isOfficer = user != null && "ROLE_OFFICER".equalsIgnoreCase(user.getRole());
+        List<Violation> list;
+
+        if (isOfficer) {
+            list = (status != null && !status.isEmpty() && !"ALL".equalsIgnoreCase(status))
+                    ? violationRepository.findByInspectionUserIdAndStatusOrderByCreatedAtDesc(user.getId(), status.toUpperCase())
+                    : violationRepository.findByInspectionUserIdOrderByCreatedAtDesc(user.getId());
+        } else {
+            list = (status != null && !status.isEmpty() && !"ALL".equalsIgnoreCase(status))
+                    ? violationRepository.findByStatus(status.toUpperCase())
+                    : violationRepository.findAllByOrderByCreatedAtDesc();
+        }
+
         return ResponseEntity.ok(ApiResponse.ok(list));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<Violation>> getViolation(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Violation>> getViolation(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
         Violation v = violationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Violation not found with id: " + id));
+
+        if (user != null && "ROLE_OFFICER".equalsIgnoreCase(user.getRole())) {
+            if (v.getInspection() != null && v.getInspection().getUser() != null &&
+                    !v.getInspection().getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(403).body(ApiResponse.error("FORBIDDEN", "Access denied: You can only view violations for your own inspections"));
+            }
+        }
+
         return ResponseEntity.ok(ApiResponse.ok(v));
     }
 

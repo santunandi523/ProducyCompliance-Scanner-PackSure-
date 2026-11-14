@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:single": "vite build && node scripts/copy-dist.js",
+    "bundle": "vite build && node scripts/copy-dist.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },

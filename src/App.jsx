@@ -22,6 +22,16 @@ const RequireAuth = ({ children }) => {
   return children;
 };
 
+const RequireAdmin = ({ children }) => {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  const role = user.role || "";
+  if (!role.toUpperCase().includes("ADMIN")) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
+
 function AppRoutes() {
   return (
     <Routes>
@@ -43,9 +53,9 @@ function AppRoutes() {
         <Route path="/violations" element={<Violations />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/history" element={<History />} />
-        <Route path="/rules" element={<Rules />} />
-        <Route path="/audit" element={<AuditLogs />} />
-        <Route path="/users" element={<Users />} />
+        <Route path="/rules" element={<RequireAdmin><Rules /></RequireAdmin>} />
+        <Route path="/audit" element={<RequireAdmin><AuditLogs /></RequireAdmin>} />
+        <Route path="/users" element={<RequireAdmin><Users /></RequireAdmin>} />
         <Route path="/profile" element={<Profile />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -58,7 +68,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <AppRoutes />
-        <Toaster position="top-right" richColors />
+        <Toaster position="top-right" richColors theme="dark" />
       </BrowserRouter>
     </AuthProvider>
   );

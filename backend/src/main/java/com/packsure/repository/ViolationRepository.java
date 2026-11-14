@@ -13,6 +13,12 @@ public interface ViolationRepository extends JpaRepository<Violation, Long> {
     List<Violation> findByStatus(String status);
     List<Violation> findAllByOrderByCreatedAtDesc();
 
+    List<Violation> findByInspectionUserIdOrderByCreatedAtDesc(Long userId);
+    List<Violation> findByInspectionUserIdAndStatusOrderByCreatedAtDesc(Long userId, String status);
+
     @Query("SELECT v.fieldName, COUNT(v) FROM Violation v GROUP BY v.fieldName ORDER BY COUNT(v) DESC")
     List<Object[]> countRecurringViolationsByField();
+
+    @Query("SELECT v.fieldName, COUNT(v) FROM Violation v WHERE v.inspection.user.id = :userId GROUP BY v.fieldName ORDER BY COUNT(v) DESC")
+    List<Object[]> countRecurringViolationsByFieldForUser(Long userId);
 }

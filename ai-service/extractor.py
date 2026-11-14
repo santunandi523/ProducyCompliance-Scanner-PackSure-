@@ -1,4 +1,15 @@
 import re
+import sys
+
+def safe_print(*args, **kwargs):
+    try:
+        print(*args, **kwargs)
+    except Exception:
+        try:
+            clean_args = [str(a).encode('ascii', errors='replace').decode('ascii') for a in args]
+            print(*clean_args, **kwargs)
+        except Exception:
+            pass
 
 MONTH_MAP = {
     'jan': '01', 'january': '01',
@@ -108,24 +119,41 @@ def is_valid_date(val: str) -> bool:
 
     return False
 
+# -------------------------------------------------------------
+# CONTEXT DISQUALIFICATION PATTERNS
+# -------------------------------------------------------------
+NUTRITION_TERMS = re.compile(
+    r'(?i)(?:protein|carbohydrate|carbohydrates|carb|carbs|sugar|sugars|fat|cholesterol|sodium|energy|kcal|kj|calorie|calories|dietary\s*fib|serving|per\s*serve|per\s*100|nutri|iron|calcium|vitamin|potassium|phosphorus|zinc)'
+)
+
+USP_DISCOUNT_TERMS = re.compile(
+    r'(?i)\b(?:u\.?s\.?p\.?|unit\s*sale\s*price|save|cashback|off|discount|flat|free|combo|offer|\/\s*(?:g|kg|gm|gms|ml|l|ltr|unit|piece|pcs|tab|capsule|pack|n)\b|per\s*(?:g|kg|gm|gms|ml|l|ltr|unit|piece|pcs|tab|capsule|pack|n)\b)'
+)
+
+NON_BRAND_HEADERS = re.compile(
+    r'(?i)\b(?:nutrition|nutritional|information|facts|ingredients?|allergens?|warning|caution|batch|lot|storage|instructions?|store\s*in|keep\s*in|fssai|lic\.?\s*no|bar\s*code|scan\s*here|feedback|customer\s*care|consumer\s*care|complaint|helpline|marketed\s*by|manufactured\s*by|packed\s*by|imported\s*by|net\s*wt|net\s*qty|mrp|best\s*before|use\s*by|use\s*before|mfd|mfg|pkd|for\s*sale\s*in|veg|non-veg|directions?|caution|important)\b'
+)
+
+INDIAN_PIN_PATTERN = re.compile(r'\b[1-9][0-9]{2}\s?[0-9]{3}\b')
+INDIAN_LOCATION_PATTERN = re.compile(
+    r'(?i)\b(?:india|bharat|andhra\s*pradesh|arunachal\s*pradesh|assam|bihar|chhattisgarh|goa|gujarat|haryana|himachal\s*pradesh|jharkhand|karnataka|kerala|madhya\s*pradesh|maharashtra|manipur|meghalaya|mizoram|nagaland|odisha|punjab|rajasthan|sikkim|tamil\s*nadu|telangana|tripura|uttar\s*pradesh|uttarakhand|west\s*bengal|delhi|new\s*delhi|bangalore|bengaluru|mumbai|bombay|chennai|madras|kolkata|calcutta|hyderabad|pune|ahmedabad|gurgaon|gurugram|noida|faridabad|ghaziabad|peenya|hosur|baddi|haridwar|surat|vadodara|jaipur|lucknow|kanpur|nagpur|indore|thane|coimbatore|bhopal|visakhapatnam)\b'
+)
+
 # Comprehensive Legal Metrology Declaration Extraction Engine (PCR 2011 Rules)
 PATTERNS = {
     "MRP": {
         "keywords": [
             r'\bm\.?r\.?p\b',
             r'\bmax(?:imum)?\s*retail\s*price\b',
-            r'\bincl\.?\s*of\s*all\s*taxes\b',
-            r'\b₹\s*\d+',
-            r'\brs\.?\s*\d+'
+            r'\bincl(?:usive)?\.?\s*of\s*all\s*taxes\b',
         ],
-        "regex": r'(?:m\.?r\.?p\.?|max\.?\s*retail\s*price|price|incl\.?\s*of\s*all\s*taxes)?[\s\:\₹\$\.\-\/]*(?:rs\.?|inr|₹)?\s*([0-9]+(?:[\.\,][0-9]{1,2})?)',
+        "regex": r'(?:m\.?r\.?p\.?|max(?:imum)?\s*retail\s*price|price)[\s\:\.\-₹\$\/]*(?:rs\.?|inr|₹)?\s*([0-9]+(?:\.[0-9]{1,2})?)',
     },
     "NET_QUANTITY": {
         "keywords": [
-            r'\bnet\s*(?:qty|quantity|wt\.?|weight|vol\.?|volume|content|contents)\b',
-            r'\b\d+\s*(?:g|kg|ml|l|ltr|gm|gms|grams|pcs|units|n)\b'
+            r'(?i)\bnet[\s\.]*(?:qty|quantity|wt\.?|weight|vol\.?|volume|content|contents)\b',
         ],
-        "regex": r'(?:net\s*(?:qty|quantity|wt\.?|weight|vol\.?|volume|content|contents)\s*[\:\-]?)?\s*([0-9]+(?:\.[0-9]+)?\s*(?:kg|g|gm|gms|grams?|ml|l|ltr|litres?|pcs|units?|n))\b',
+        "regex": r'(?i)(?:net[\s\.]*(?:qty|quantity|wt\.?|weight|vol\.?|volume|content|contents)[\s\:\.\-]*)?\s*([0-9]+(?:\.[0-9]+)?\s*(?:kg|g|gm|gms|grams?|ml|l|ltr|litres?|pcs|units?|n))\b',
     },
     "MANUFACTURER": {
         "keywords": [
@@ -142,7 +170,7 @@ PATTERNS = {
             r'\bimporter\b',
             r'\bmarketed\s*by\b'
         ],
-        "regex": r'(?:mfd\.?\s*by|mfg\.?\s*by|manufactured\s*(?:&|and)?\s*(?:marketed|packed|for)?\s*by|produced\s*by|packed\s*by|packer|imported\s*by|importer|marketed\s*by)[\s\:\-]+(.+)',
+        "regex": r'(?:mfd\.?\s*by|mfg\.?\s*by|manufactured\s*(?:&|and)?\s*(?:marketed|packed|for)?\s*by|produced\s*by|packed\s*by|packer|imported\s*by|importer|marketed\s*by)[\s\:\.\-]+(.+)',
     },
     "MANUFACTURER_ADDRESS": {
         "keywords": [r'\bmfd\s*address\b', r'\bmanufactured\s*at\b', r'\bfactory\s*address\b', r'\bregd\.?\s*office\b'],
@@ -274,10 +302,21 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
     # Sort regions by imageId, then top-to-bottom
     sorted_regions = sorted(ocr_regions, key=lambda r: (r.get("imageId", "img-1"), r["bbox"]["y"], r["bbox"]["x"]))
 
-    # PASS 1: Pattern & Multi-Line Proximity Matching
+    # PASS 1: Pattern & Multi-Line Proximity Matching with Context Guarding
     for field_name, rules in PATTERNS.items():
         for i, region in enumerate(sorted_regions):
             text = region["normalizedText"]
+
+            # Guard 1: NET_QUANTITY must never be triggered on nutrition table rows
+            if field_name == "NET_QUANTITY":
+                if NUTRITION_TERMS.search(text) or USP_DISCOUNT_TERMS.search(text):
+                    continue
+
+            # Guard 2: MRP must not be triggered on pure Unit Sale Price or Discount lines
+            if field_name == "MRP":
+                # If text contains USP or discount, only consider if it also has an explicit MRP header
+                if USP_DISCOUNT_TERMS.search(text) and not re.search(r'(?i)\b(?:m\.?r\.?p\.?|max(?:imum)?\s*retail\s*price)\b', text):
+                    continue
 
             triggered = False
             for kw in rules["keywords"]:
@@ -290,27 +329,72 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                 ocr_conf = region["confidence"]
                 extraction_conf = 0.95
                 matched_reg = region
+                priority_score = 100  # Explicit statutory keyword match
 
                 # 1. Check same line
-                m = re.search(rules["regex"], text, re.IGNORECASE)
-                if m:
-                    candidate = m.group(1).strip() if m.groups() and m.group(1) else m.group(0).strip()
-                    if field_name in ["MANUFACTURE_DATE", "EXPIRY_DATE", "PACK_DATE", "BEST_BEFORE"]:
-                        if is_valid_date(candidate):
-                            extracted_val = candidate
+                if field_name == "MRP":
+                    # Targeted search: extract number directly associated with MRP
+                    m_mrp = re.search(r'(?i)(?:m\.?r\.?p\.?|max(?:imum)?\s*retail\s*price)[\s\:\.\-₹\$\/]*(?:rs\.?|inr|₹)?\s*([0-9]+(?:\.[0-9]{1,2})?)', text)
+                    if m_mrp:
+                        extracted_val = m_mrp.group(1).strip()
                     else:
-                        extracted_val = candidate
+                        m_price = re.search(r'(?i)(?:(?:rs\.?|inr|₹)\s*([0-9]+(?:\.[0-9]{1,2})?)|([0-9]+(?:\.[0-9]{1,2})?)\s*(?:rs\.?|inr|₹))', text)
+                        if m_price and not USP_DISCOUNT_TERMS.search(text):
+                            extracted_val = (m_price.group(1) or m_price.group(2)).strip()
+                elif field_name == "NET_QUANTITY":
+                    m_qty = re.search(rules["regex"], text, re.IGNORECASE)
+                    if m_qty:
+                        extracted_val = m_qty.group(1).strip() if m_qty.groups() and m_qty.group(1) else m_qty.group(0).strip()
+                else:
+                    m = re.search(rules["regex"], text, re.IGNORECASE)
+                    if m:
+                        candidate = m.group(1).strip() if m.groups() and m.group(1) else m.group(0).strip()
+                        if field_name in ["MANUFACTURE_DATE", "EXPIRY_DATE", "PACK_DATE", "BEST_BEFORE"]:
+                            if is_valid_date(candidate):
+                                extracted_val = candidate
+                        else:
+                            extracted_val = candidate
 
                 # 2. Multi-line proximity search: check up to 4 adjacent lines on same image
-                if not extracted_val or len(extracted_val) < 2:
+                if not extracted_val or len(extracted_val) < 1:
                     for offset in range(1, 5):
                         if i + offset < len(sorted_regions):
                             next_region = sorted_regions[i + offset]
                             if next_region.get("imageId") == region.get("imageId"):
                                 next_text = next_region["normalizedText"]
 
-                                if field_name in ["MANUFACTURE_DATE", "PACK_DATE"]:
-                                    # Stop proximity search if next line belongs to another header (e.g. EXPIRY, BATCH, MRP)
+                                if field_name == "MRP":
+                                    # Next line must not be USP / discount, and must contain a numeric price
+                                    if USP_DISCOUNT_TERMS.search(next_text):
+                                        continue
+                                    m_p = re.search(r'(?i)(?:rs\.?|inr|₹)?\s*([0-9]+(?:\.[0-9]{1,2})?)', next_text)
+                                    if m_p and m_p.group(1):
+                                        try:
+                                            f_val = float(m_p.group(1))
+                                            if 0.5 <= f_val <= 100000:
+                                                extracted_val = m_p.group(1).strip()
+                                                ocr_conf = min(region["confidence"], next_region["confidence"])
+                                                extraction_conf = 0.90
+                                                matched_reg = next_region
+                                                priority_score = 90
+                                                break
+                                        except Exception:
+                                            pass
+
+                                elif field_name == "NET_QUANTITY":
+                                    # Next line must not be nutrition info or USP
+                                    if NUTRITION_TERMS.search(next_text) or USP_DISCOUNT_TERMS.search(next_text):
+                                        continue
+                                    m_q = re.search(r'\b([0-9]+(?:\.[0-9]+)?\s*(?:kg|g|gm|gms|grams?|ml|l|ltr|litres?|pcs|units?|n))\b', next_text, re.IGNORECASE)
+                                    if m_q:
+                                        extracted_val = m_q.group(1).strip()
+                                        ocr_conf = min(region["confidence"], next_region["confidence"])
+                                        extraction_conf = 0.90
+                                        matched_reg = next_region
+                                        priority_score = 90
+                                        break
+
+                                elif field_name in ["MANUFACTURE_DATE", "PACK_DATE"]:
                                     if re.search(r'(?i)\b(?:exp|eyp|expiry|use\s*before|use\s*by|best\s*before|batch|lot|mrp)\b', next_text):
                                         break
                                     m_date = re.search(r'(?i)\b(' + DATE_VAL_PATTERN + r')\b', next_text)
@@ -319,9 +403,10 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                                         ocr_conf = min(region["confidence"], next_region["confidence"])
                                         extraction_conf = 0.90
                                         matched_reg = next_region
+                                        priority_score = 90
                                         break
+
                                 elif field_name in ["EXPIRY_DATE", "BEST_BEFORE"]:
-                                    # Stop proximity search if next line belongs to another header (e.g. MFG, BATCH, MRP)
                                     if re.search(r'(?i)\b(?:mfd|mfg|pkd|manufactur(?:e|ed|ing)?|date\s*of\s*(?:mfg|mfd|pkd|manufacture)|batch|lot|mrp)\b', next_text):
                                         break
                                     m_date = re.search(r'(?i)\b(' + DATE_VAL_PATTERN + r')\b', next_text)
@@ -330,38 +415,42 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                                         ocr_conf = min(region["confidence"], next_region["confidence"])
                                         extraction_conf = 0.90
                                         matched_reg = next_region
+                                        priority_score = 90
                                         break
+
                                 else:
-                                    # Non-date fields proximity logic
+                                    # Non-numeric text fields (e.g. Manufacturer, Packer)
                                     m_next = re.search(rules["regex"], next_text, re.IGNORECASE)
                                     if m_next:
                                         extracted_val = m_next.group(1).strip() if m_next.groups() and m_next.group(1) else m_next.group(0).strip()
                                         ocr_conf = min(region["confidence"], next_region["confidence"])
                                         extraction_conf = 0.85
                                         matched_reg = next_region
+                                        priority_score = 85
                                         break
-                                    elif len(next_text.strip()) >= 2 and not any(re.search(other_kw, next_text, re.IGNORECASE) for other_field, other_rules in PATTERNS.items() for other_kw in other_rules["keywords"]):
-                                        # Next line does not match any other header keyword, treat as value extension
+                                    elif len(next_text.strip()) >= 3 and not any(re.search(other_kw, next_text, re.IGNORECASE) for other_field, other_rules in PATTERNS.items() for other_kw in other_rules["keywords"]):
                                         extracted_val = next_text.strip()
                                         ocr_conf = min(region["confidence"], next_region["confidence"])
                                         extraction_conf = 0.80
                                         matched_reg = next_region
+                                        priority_score = 80
                                         break
 
                 if extracted_val and len(extracted_val) >= 1:
                     norm_res = normalize_field_value(field_name, extracted_val, text)
 
                     if field_name in ["MANUFACTURE_DATE", "EXPIRY_DATE", "PACK_DATE", "BEST_BEFORE"]:
-                        print(f"\n====================================")
-                        print(f"DATE EXTRACTION DEBUG")
-                        print(f"Label: {text}")
-                        print(f"Value: {norm_res['displayValue']}")
-                        print(f"Field: {field_name}")
-                        print(f"Image ID: {matched_reg.get('imageId', 'img-1')}")
-                        print(f"Bounding Box: {matched_reg.get('bbox', {})}")
-                        print(f"Confidence: {round(float(ocr_conf) * float(extraction_conf), 3)}")
-                        print(f"====================================\n", flush=True)
+                        safe_print(f"\n====================================")
+                        safe_print(f"DATE EXTRACTION DEBUG")
+                        safe_print(f"Label: {text}")
+                        safe_print(f"Value: {norm_res['displayValue']}")
+                        safe_print(f"Field: {field_name}")
+                        safe_print(f"Image ID: {matched_reg.get('imageId', 'img-1')}")
+                        safe_print(f"Bounding Box: {matched_reg.get('bbox', {})}")
+                        safe_print(f"Confidence: {round(float(ocr_conf) * float(extraction_conf), 3)}")
+                        safe_print(f"====================================\n", flush=True)
 
+                    final_conf = round(float(ocr_conf) * float(extraction_conf), 3)
                     raw_findings.append({
                         "field": field_name,
                         "displayValue": norm_res["displayValue"],
@@ -371,7 +460,9 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                         "rawOcrText": text,
                         "ocrConfidence": round(float(ocr_conf), 3),
                         "extractionConfidence": round(float(extraction_conf), 3),
-                        "finalConfidence": round(float(ocr_conf) * float(extraction_conf), 3),
+                        "finalConfidence": final_conf,
+                        "priorityScore": priority_score,
+                        "compositeScore": priority_score + (final_conf * 20.0),
                         "evidenceType": norm_res.get("evidenceType", "EXPLICIT"),
                         "needsVerification": norm_res.get("flagVerify", False),
                         "evidence": {
@@ -383,17 +474,22 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                     })
                     matched_region_ids.add(matched_reg.get("regionId"))
 
-    # PASS 2: Standalone Fallback Extraction across all images
-    extracted_fields = set(f["field"] for f in raw_findings)
+    # PASS 2: Standalone Fallback Extraction
+    # Allows fallback detection across all images without premature short-circuiting
+    has_explicit_mrp = any(f["field"] == "MRP" and f["priorityScore"] >= 80 for f in raw_findings)
+    has_explicit_qty = any(f["field"] == "NET_QUANTITY" and f["priorityScore"] >= 80 for f in raw_findings)
+    has_explicit_mfd = any(f["field"] == "MANUFACTURE_DATE" and f["priorityScore"] >= 80 for f in raw_findings)
+    has_explicit_exp = any(f["field"] == "EXPIRY_DATE" and f["priorityScore"] >= 80 for f in raw_findings)
 
     for region in sorted_regions:
         text = region["normalizedText"]
 
         # Standalone Customer Care Phone check
-        if "CUSTOMER_CARE_PHONE" not in extracted_fields:
+        if not any(f["field"] == "CUSTOMER_CARE_PHONE" for f in raw_findings):
             phone_m = re.search(r'\b(?:1800[\-\s]?[0-9]{3}[\-\s]?[0-9]{4}|\+?91[\-\s]?[0-9]{10})\b', text)
             if phone_m:
                 val = phone_m.group(0)
+                final_conf = round(float(region["confidence"]) * 0.90, 3)
                 raw_findings.append({
                     "field": "CUSTOMER_CARE_PHONE",
                     "displayValue": val,
@@ -403,7 +499,9 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                     "rawOcrText": text,
                     "ocrConfidence": round(float(region["confidence"]), 3),
                     "extractionConfidence": 0.90,
-                    "finalConfidence": round(float(region["confidence"]) * 0.90, 3),
+                    "finalConfidence": final_conf,
+                    "priorityScore": 90,
+                    "compositeScore": 90 + (final_conf * 20.0),
                     "evidenceType": "EXPLICIT",
                     "needsVerification": False,
                     "evidence": {
@@ -413,13 +511,13 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                         "ocrText": region["text"]
                     }
                 })
-                extracted_fields.add("CUSTOMER_CARE_PHONE")
 
         # Standalone Customer Care Email check
-        if "CUSTOMER_CARE_EMAIL" not in extracted_fields:
+        if not any(f["field"] == "CUSTOMER_CARE_EMAIL" for f in raw_findings):
             email_m = re.search(r'\b[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+\b', text)
             if email_m:
                 val = email_m.group(0)
+                final_conf = round(float(region["confidence"]) * 0.92, 3)
                 raw_findings.append({
                     "field": "CUSTOMER_CARE_EMAIL",
                     "displayValue": val,
@@ -429,7 +527,9 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                     "rawOcrText": text,
                     "ocrConfidence": round(float(region["confidence"]), 3),
                     "extractionConfidence": 0.92,
-                    "finalConfidence": round(float(region["confidence"]) * 0.92, 3),
+                    "finalConfidence": final_conf,
+                    "priorityScore": 92,
+                    "compositeScore": 92 + (final_conf * 20.0),
                     "evidenceType": "EXPLICIT",
                     "needsVerification": False,
                     "evidence": {
@@ -439,10 +539,9 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                         "ocrText": region["text"]
                     }
                 })
-                extracted_fields.add("CUSTOMER_CARE_EMAIL")
 
-        # Standalone Manufacture / Packing Date check
-        if "MANUFACTURE_DATE" not in extracted_fields:
+        # Standalone Manufacture Date check
+        if not has_explicit_mfd:
             mfg_m = re.search(
                 r'(?i)\b(?:mfd\.?|mfg\.?|pkd\.?|manufactured|packed|date\s*of\s*(?:mfg|mfd|pkd|manufacture|packing))[\s\:\.\/\-]*'
                 r'(?:date|on)?[\s\:\.\/\-]*'
@@ -452,6 +551,7 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
             if mfg_m and is_valid_date(mfg_m.group(1)):
                 val = mfg_m.group(1).strip()
                 norm_res = normalize_field_value("MANUFACTURE_DATE", val, text)
+                final_conf = round(float(region["confidence"]) * 0.90, 3)
                 raw_findings.append({
                     "field": "MANUFACTURE_DATE",
                     "displayValue": norm_res["displayValue"],
@@ -461,7 +561,9 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                     "rawOcrText": text,
                     "ocrConfidence": round(float(region["confidence"]), 3),
                     "extractionConfidence": 0.90,
-                    "finalConfidence": round(float(region["confidence"]) * 0.90, 3),
+                    "finalConfidence": final_conf,
+                    "priorityScore": 85,
+                    "compositeScore": 85 + (final_conf * 20.0),
                     "evidenceType": "EXPLICIT",
                     "needsVerification": False,
                     "evidence": {
@@ -471,10 +573,9 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                         "ocrText": region["text"]
                     }
                 })
-                extracted_fields.add("MANUFACTURE_DATE")
 
         # Standalone Expiry Date check
-        if "EXPIRY_DATE" not in extracted_fields:
+        if not has_explicit_exp:
             exp_m = re.search(
                 r'(?i)\b(?:exp\.?|expiry|use\s*before|use\s*by|best\s*before)[\s\:\.\/\-]*'
                 r'(?:date|on)?[\s\:\.\/\-]*'
@@ -484,6 +585,7 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
             if exp_m and is_valid_date(exp_m.group(1)):
                 val = exp_m.group(1).strip()
                 norm_res = normalize_field_value("EXPIRY_DATE", val, text)
+                final_conf = round(float(region["confidence"]) * 0.90, 3)
                 raw_findings.append({
                     "field": "EXPIRY_DATE",
                     "displayValue": norm_res["displayValue"],
@@ -493,7 +595,9 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                     "rawOcrText": text,
                     "ocrConfidence": round(float(region["confidence"]), 3),
                     "extractionConfidence": 0.90,
-                    "finalConfidence": round(float(region["confidence"]) * 0.90, 3),
+                    "finalConfidence": final_conf,
+                    "priorityScore": 85,
+                    "compositeScore": 85 + (final_conf * 20.0),
                     "evidenceType": "EXPLICIT",
                     "needsVerification": False,
                     "evidence": {
@@ -503,128 +607,173 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                         "ocrText": region["text"]
                     }
                 })
-                extracted_fields.add("EXPIRY_DATE")
 
-        # Standalone MRP check
-        if "MRP" not in extracted_fields:
-            mrp_m = re.search(r'(?:₹|Rs\.?)\s*([0-9]+(?:\.[0-9]{1,2})?)', text, re.IGNORECASE)
-            if mrp_m:
-                val = mrp_m.group(1)
-                norm_res = normalize_field_value("MRP", val, text)
-                raw_findings.append({
-                    "field": "MRP",
-                    "displayValue": norm_res["displayValue"],
-                    "normalizedValue": norm_res["normalizedValue"],
-                    "unit": None,
-                    "currency": "INR",
-                    "rawOcrText": text,
-                    "ocrConfidence": round(float(region["confidence"]), 3),
-                    "extractionConfidence": 0.90,
-                    "finalConfidence": round(float(region["confidence"]) * 0.90, 3),
-                    "evidenceType": "EXPLICIT",
-                    "needsVerification": False,
-                    "evidence": {
-                        "imageId": region.get("imageId", "img-1"),
-                        "regionId": region["regionId"],
-                        "bbox": region["bbox"],
-                        "ocrText": region["text"]
-                    }
-                })
-                extracted_fields.add("MRP")
+        # Standalone MRP check (only if no explicit MRP declaration found)
+        if not has_explicit_mrp:
+            if not USP_DISCOUNT_TERMS.search(text) and not NUTRITION_TERMS.search(text):
+                mrp_m = re.search(r'(?:₹|Rs\.?)\s*([0-9]+(?:\.[0-9]{1,2})?)', text, re.IGNORECASE)
+                if mrp_m:
+                    val = mrp_m.group(1)
+                    try:
+                        f_v = float(val)
+                        if 1.0 <= f_v <= 100000:
+                            norm_res = normalize_field_value("MRP", val, text)
+                            final_conf = round(float(region["confidence"]) * 0.85, 3)
+                            raw_findings.append({
+                                "field": "MRP",
+                                "displayValue": norm_res["displayValue"],
+                                "normalizedValue": norm_res["normalizedValue"],
+                                "unit": None,
+                                "currency": "INR",
+                                "rawOcrText": text,
+                                "ocrConfidence": round(float(region["confidence"]), 3),
+                                "extractionConfidence": 0.85,
+                                "finalConfidence": final_conf,
+                                "priorityScore": 40,
+                                "compositeScore": 40 + (final_conf * 20.0),
+                                "evidenceType": "STANDALONE_FALLBACK",
+                                "needsVerification": False,
+                                "evidence": {
+                                    "imageId": region.get("imageId", "img-1"),
+                                    "regionId": region["regionId"],
+                                    "bbox": region["bbox"],
+                                    "ocrText": region["text"]
+                                }
+                            })
+                    except Exception:
+                        pass
 
-        # Standalone Net Quantity check
-        if "NET_QUANTITY" not in extracted_fields:
-            qty_m = re.search(r'\b([0-9]+(?:\.[0-9]+)?\s*(?:kg|g|gm|gms|grams?|ml|l|ltr|litres?|pcs|units?|n))\b', text, re.IGNORECASE)
-            if qty_m:
-                val = qty_m.group(1)
-                norm_res = normalize_field_value("NET_QUANTITY", val, text)
-                raw_findings.append({
-                    "field": "NET_QUANTITY",
-                    "displayValue": norm_res["displayValue"],
-                    "normalizedValue": norm_res["normalizedValue"],
-                    "unit": norm_res.get("unit"),
-                    "currency": None,
-                    "rawOcrText": text,
-                    "ocrConfidence": round(float(region["confidence"]), 3),
-                    "extractionConfidence": 0.88,
-                    "finalConfidence": round(float(region["confidence"]) * 0.88, 3),
-                    "evidenceType": "EXPLICIT",
-                    "needsVerification": False,
-                    "evidence": {
-                        "imageId": region.get("imageId", "img-1"),
-                        "regionId": region["regionId"],
-                        "bbox": region["bbox"],
-                        "ocrText": region["text"]
-                    }
-                })
-                extracted_fields.add("NET_QUANTITY")
+        # Standalone Net Quantity check (only if no explicit Net Quantity declaration found)
+        if not has_explicit_qty:
+            if not NUTRITION_TERMS.search(text) and not USP_DISCOUNT_TERMS.search(text):
+                qty_m = re.search(r'\b([0-9]+(?:\.[0-9]+)?\s*(?:kg|g|gm|gms|grams?|ml|l|ltr|litres?|pcs|units?|n))\b', text, re.IGNORECASE)
+                if qty_m:
+                    val = qty_m.group(1)
+                    norm_res = normalize_field_value("NET_QUANTITY", val, text)
+                    final_conf = round(float(region["confidence"]) * 0.85, 3)
+                    raw_findings.append({
+                        "field": "NET_QUANTITY",
+                        "displayValue": norm_res["displayValue"],
+                        "normalizedValue": norm_res["normalizedValue"],
+                        "unit": norm_res.get("unit"),
+                        "currency": None,
+                        "rawOcrText": text,
+                        "ocrConfidence": round(float(region["confidence"]), 3),
+                        "extractionConfidence": 0.85,
+                        "finalConfidence": final_conf,
+                        "priorityScore": 40,
+                        "compositeScore": 40 + (final_conf * 20.0),
+                        "evidenceType": "STANDALONE_FALLBACK",
+                        "needsVerification": False,
+                        "evidence": {
+                            "imageId": region.get("imageId", "img-1"),
+                            "regionId": region["regionId"],
+                            "bbox": region["bbox"],
+                            "ocrText": region["text"]
+                        }
+                    })
 
     # Multi-line MANUFACTURER_ADDRESS synthesis if manufacturer was extracted but address line wasn't captured separately
     mfg_findings = [f for f in raw_findings if f["field"] == "MANUFACTURER"]
     if mfg_findings and not any(f["field"] == "MANUFACTURER_ADDRESS" for f in raw_findings):
-        primary_mfg = mfg_findings[0]
+        primary_mfg = max(mfg_findings, key=lambda x: x["compositeScore"])
         mfg_reg_id = primary_mfg["evidence"]["regionId"]
-        for idx, r in enumerate(sorted_regions):
-            if r["regionId"] == mfg_reg_id and idx + 1 < len(sorted_regions):
-                next_r = sorted_regions[idx + 1]
-                if next_r.get("imageId") == r.get("imageId"):
-                    addr_candidate = next_r["normalizedText"].strip()
-                    if len(addr_candidate) >= 3 and not any(re.search(other_kw, addr_candidate, re.IGNORECASE) for other_f, other_rules in PATTERNS.items() for other_kw in other_rules["keywords"]):
-                        raw_findings.append({
-                            "field": "MANUFACTURER_ADDRESS",
-                            "displayValue": addr_candidate,
-                            "normalizedValue": addr_candidate,
-                            "unit": None,
-                            "currency": None,
-                            "rawOcrText": addr_candidate,
-                            "ocrConfidence": next_r["confidence"],
-                            "extractionConfidence": 0.85,
-                            "finalConfidence": round(next_r["confidence"] * 0.85, 3),
-                            "evidenceType": "EXPLICIT",
-                            "needsVerification": False,
-                            "evidence": {
-                                "imageId": next_r.get("imageId", "img-1"),
-                                "regionId": next_r["regionId"],
-                                "bbox": next_r["bbox"],
-                                "ocrText": next_r["text"]
-                            }
-                        })
-                        break
+        addr_parts = []
+        last_reg = None
 
-    # Synthesize COUNTRY_OF_ORIGIN from address if explicit country declaration was not found
+        for idx, r in enumerate(sorted_regions):
+            if r["regionId"] == mfg_reg_id:
+                for offset in range(1, 4):
+                    if idx + offset < len(sorted_regions):
+                        next_r = sorted_regions[idx + offset]
+                        if next_r.get("imageId") == r.get("imageId"):
+                            cand = next_r["normalizedText"].strip()
+                            if len(cand) >= 3 and not NUTRITION_TERMS.search(cand) and not USP_DISCOUNT_TERMS.search(cand) and not any(re.search(other_kw, cand, re.IGNORECASE) for other_f, other_rules in PATTERNS.items() for other_kw in other_rules["keywords"]):
+                                addr_parts.append(cand)
+                                last_reg = next_r
+                            else:
+                                break
+                break
+
+        if addr_parts and last_reg:
+            full_addr = ", ".join(addr_parts)
+            final_conf = round(last_reg["confidence"] * 0.88, 3)
+            raw_findings.append({
+                "field": "MANUFACTURER_ADDRESS",
+                "displayValue": full_addr,
+                "normalizedValue": full_addr,
+                "unit": None,
+                "currency": None,
+                "rawOcrText": full_addr,
+                "ocrConfidence": last_reg["confidence"],
+                "extractionConfidence": 0.88,
+                "finalConfidence": final_conf,
+                "priorityScore": 85,
+                "compositeScore": 85 + (final_conf * 20.0),
+                "evidenceType": "EXPLICIT",
+                "needsVerification": False,
+                "evidence": {
+                    "imageId": last_reg.get("imageId", "img-1"),
+                    "regionId": last_reg["regionId"],
+                    "bbox": last_reg["bbox"],
+                    "ocrText": last_reg["text"]
+                }
+            })
+
+    # Synthesize COUNTRY_OF_ORIGIN
     explicit_coo = any(f["field"] == "COUNTRY_OF_ORIGIN" and f.get("evidenceType") == "EXPLICIT" for f in raw_findings)
     if not explicit_coo:
         country_regex = r'\b(India|Bharat|China|USA|United States|UK|United Kingdom|Germany|Japan|Vietnam|Thailand|Taiwan|Malaysia|Indonesia|Korea|Italy|France|Spain|Australia|Canada|Mexico|Brazil|Sri Lanka|Bangladesh|Nepal)\b'
+        inferred_country = None
+        inferred_region = None
+
+        # 1. Search in manufacturer address or full text for explicit country names
         for region in sorted_regions:
             text = region["normalizedText"]
             country_m = re.search(country_regex, text, re.IGNORECASE)
             if country_m:
-                country_candidate = country_m.group(1).title()
-                raw_findings.append({
-                    "field": "COUNTRY_OF_ORIGIN",
-                    "displayValue": country_candidate,
-                    "normalizedValue": country_candidate,
-                    "unit": None,
-                    "currency": None,
-                    "rawOcrText": text,
-                    "ocrConfidence": round(float(region["confidence"]), 3),
-                    "extractionConfidence": 0.80,
-                    "finalConfidence": round(float(region["confidence"]) * 0.80, 3),
-                    "evidenceType": "INFERRED_FROM_MANUFACTURER_ADDRESS",
-                    "needsVerification": False,
-                    "evidence": {
-                        "imageId": region.get("imageId", "img-1"),
-                        "regionId": region["regionId"],
-                        "bbox": region["bbox"],
-                        "ocrText": region["text"]
-                    }
-                })
+                inferred_country = country_m.group(1).title()
+                inferred_region = region
                 break
+
+        # 2. If not found, check for Indian PIN code or prominent Indian state / city in manufacturer address
+        if not inferred_country:
+            mfg_addr = next((f for f in raw_findings if f["field"] == "MANUFACTURER_ADDRESS"), None)
+            search_targets = [mfg_addr["displayValue"]] if mfg_addr else [r["normalizedText"] for r in sorted_regions]
+            for target_text in search_targets:
+                if INDIAN_PIN_PATTERN.search(target_text) or INDIAN_LOCATION_PATTERN.search(target_text):
+                    inferred_country = "India"
+                    inferred_region = sorted_regions[0] if sorted_regions else {"regionId": "reg-coo", "bbox": {}, "text": target_text, "confidence": 0.90}
+                    break
+
+        if inferred_country and inferred_region:
+            final_conf = round(float(inferred_region.get("confidence", 0.90)) * 0.80, 3)
+            raw_findings.append({
+                "field": "COUNTRY_OF_ORIGIN",
+                "displayValue": inferred_country,
+                "normalizedValue": inferred_country,
+                "unit": None,
+                "currency": None,
+                "rawOcrText": inferred_region.get("text", inferred_country),
+                "ocrConfidence": round(float(inferred_region.get("confidence", 0.90)), 3),
+                "extractionConfidence": 0.80,
+                "finalConfidence": final_conf,
+                "priorityScore": 60,
+                "compositeScore": 60 + (final_conf * 20.0),
+                "evidenceType": "INFERRED_FROM_MANUFACTURER_ADDRESS",
+                "needsVerification": False,
+                "evidence": {
+                    "imageId": inferred_region.get("imageId", "img-1"),
+                    "regionId": inferred_region.get("regionId", "reg-coo"),
+                    "bbox": inferred_region.get("bbox", {}),
+                    "ocrText": inferred_region.get("text", inferred_country)
+                }
+            })
 
     # Synthesize CUSTOMER_CARE_CONTACT if any customer care contact (phone, email, website) exists
     cc_findings = [f for f in raw_findings if f["field"] in ["CUSTOMER_CARE_EMAIL", "CUSTOMER_CARE_PHONE", "WEBSITE"]]
     if cc_findings and not any(f["field"] == "CUSTOMER_CARE_CONTACT" for f in raw_findings):
-        best_cc = max(cc_findings, key=lambda x: x["finalConfidence"])
+        best_cc = max(cc_findings, key=lambda x: x["compositeScore"])
         raw_findings.append({
             "field": "CUSTOMER_CARE_CONTACT",
             "displayValue": "PRESENT",
@@ -635,6 +784,8 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
             "ocrConfidence": best_cc["ocrConfidence"],
             "extractionConfidence": best_cc["extractionConfidence"],
             "finalConfidence": best_cc["finalConfidence"],
+            "priorityScore": best_cc.get("priorityScore", 90),
+            "compositeScore": best_cc.get("compositeScore", 100),
             "evidenceType": "EXPLICIT",
             "needsVerification": False,
             "evidence": best_cc["evidence"]
@@ -653,6 +804,8 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                 "ocrConfidence": 0.99,
                 "extractionConfidence": 1.0,
                 "finalConfidence": 0.99,
+                "priorityScore": 100,
+                "compositeScore": 120.0,
                 "evidenceType": "EXPLICIT",
                 "needsVerification": False,
                 "evidence": {
@@ -663,16 +816,21 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                 }
             })
 
-    # Infer Brand / Product Name from prominent upper text regions
+    # Infer Brand / Product Name with Header Exclusion Filtering
     top_candidates = [
         r for r in sorted_regions
         if r["regionId"] not in matched_region_ids
         and r["bbox"]["yPct"] < 35
         and len(r["text"].split()) <= 6
         and len(r["text"]) >= 3
+        and not NON_BRAND_HEADERS.search(r["normalizedText"])
+        and not NUTRITION_TERMS.search(r["normalizedText"])
+        and not USP_DISCOUNT_TERMS.search(r["normalizedText"])
+        and not re.search(r'(?i)\b(?:rs\.?|inr|₹|\d+\s*(?:g|kg|ml|l))\b', r["normalizedText"])
     ]
     if top_candidates:
         brand_candidate = top_candidates[0]
+        final_conf = round(brand_candidate["confidence"] * 0.75, 3)
         raw_findings.append({
             "field": "BRAND",
             "displayValue": brand_candidate["text"].title(),
@@ -682,7 +840,9 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
             "rawOcrText": brand_candidate["text"],
             "ocrConfidence": brand_candidate["confidence"],
             "extractionConfidence": 0.75,
-            "finalConfidence": round(brand_candidate["confidence"] * 0.75, 3),
+            "finalConfidence": final_conf,
+            "priorityScore": 75,
+            "compositeScore": 75 + (final_conf * 20.0),
             "evidenceType": "EXPLICIT",
             "needsVerification": False,
             "evidence": {
@@ -694,6 +854,7 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
         })
         if len(top_candidates) > 1:
             prod_candidate = top_candidates[1]
+            final_conf = round(prod_candidate["confidence"] * 0.70, 3)
             raw_findings.append({
                 "field": "PRODUCT_NAME",
                 "displayValue": prod_candidate["text"].title(),
@@ -703,7 +864,9 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
                 "rawOcrText": prod_candidate["text"],
                 "ocrConfidence": prod_candidate["confidence"],
                 "extractionConfidence": 0.70,
-                "finalConfidence": round(prod_candidate["confidence"] * 0.70, 3),
+                "finalConfidence": final_conf,
+                "priorityScore": 70,
+                "compositeScore": 70 + (final_conf * 20.0),
                 "evidenceType": "EXPLICIT",
                 "needsVerification": False,
                 "evidence": {
@@ -715,7 +878,7 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
             })
 
     # -------------------------------------------------------------
-    # MULTI-IMAGE FUSION & CONFLICT RESOLUTION
+    # MULTI-IMAGE FUSION & ROBUST CONFLICT RESOLUTION
     # -------------------------------------------------------------
     grouped = {}
     for finding in raw_findings:
@@ -735,72 +898,107 @@ def extract_declarations(ocr_regions: list, barcodes: list = None) -> list:
             item["conflictDetected"] = False
             consolidated_declarations.append(item)
         else:
-            norm_values = set(it["normalizedValue"] for it in items)
-            items_sorted = sorted(items, key=lambda x: x["finalConfidence"], reverse=True)
-            primary = items_sorted[0]
+            # Group items by normalizedValue
+            val_groups = {}
+            for it in items:
+                norm_v = it["normalizedValue"]
+                if norm_v not in val_groups:
+                    val_groups[norm_v] = []
+                val_groups[norm_v].append(it)
 
-            evidences = [it["evidence"] for it in items]
+            # Score each distinct value group
+            scored_groups = []
+            for norm_v, group_items in val_groups.items():
+                best_item = max(group_items, key=lambda x: x.get("compositeScore", x["finalConfidence"] * 20.0))
+                unique_images = set(x["evidence"]["imageId"] for x in group_items)
+                corroboration_bonus = (len(unique_images) - 1) * 20.0
+                total_group_score = best_item.get("compositeScore", 50) + corroboration_bonus
+                scored_groups.append({
+                    "normValue": norm_v,
+                    "items": group_items,
+                    "bestItem": best_item,
+                    "score": total_group_score,
+                    "uniqueImages": unique_images
+                })
 
-            if len(norm_values) == 1:
-                # Agreement across images
-                primary["detectedValue"] = primary["displayValue"]
-                primary["evidences"] = evidences
-                primary["evidenceType"] = primary.get("evidenceType", "EXPLICIT")
-                primary["conflictDetected"] = False
-                primary["finalConfidence"] = min(0.99, primary["finalConfidence"] + 0.05)
-                consolidated_declarations.append(primary)
-            else:
-                # Conflict detected across images
-                primary["detectedValue"] = primary["displayValue"]
-                primary["evidences"] = evidences
-                primary["evidenceType"] = primary.get("evidenceType", "EXPLICIT")
+            # Sort groups by composite score descending
+            scored_groups.sort(key=lambda g: g["score"], reverse=True)
+            winner_group = scored_groups[0]
+            primary = winner_group["bestItem"]
+
+            # Evidences: all evidences supporting the winning value
+            all_evidences = [x["evidence"] for x in winner_group["items"]]
+            primary["detectedValue"] = primary["displayValue"]
+            primary["evidences"] = all_evidences
+            primary["evidenceType"] = primary.get("evidenceType", "EXPLICIT")
+
+            # Check if there is a REAL conflict
+            # A real conflict only exists if another group has an EXPLICIT_STATUTORY candidate (priorityScore >= 80)
+            # with high confidence that genuinely contradicts the winner.
+            has_real_conflict = False
+            conflicting_values = [winner_group["normValue"]]
+
+            for other_g in scored_groups[1:]:
+                other_best = other_g["bestItem"]
+                if other_best.get("priorityScore", 0) >= 80 and other_best["finalConfidence"] >= 0.70:
+                    if other_g["normValue"] not in conflicting_values:
+                        has_real_conflict = True
+                        conflicting_values.append(other_g["normValue"])
+
+            if has_real_conflict:
                 primary["conflictDetected"] = True
-                primary["conflictDetails"] = f"Conflicting values detected across images: {', '.join(norm_values)}"
+                primary["conflictDetails"] = f"Conflicting declarations detected across images: {', '.join(conflicting_values)}"
                 primary["needsVerification"] = True
-                consolidated_declarations.append(primary)
+            else:
+                primary["conflictDetected"] = False
+                primary["needsVerification"] = False
+                if len(winner_group["uniqueImages"]) > 1:
+                    primary["finalConfidence"] = min(0.99, primary["finalConfidence"] + 0.05)
+
+            consolidated_declarations.append(primary)
 
     # -------------------------------------------------------------
     # TEMPORARY LOGGING FOR TARGET FIELDS (REQUIREMENT 20)
     # -------------------------------------------------------------
-    print(f"\n====================================")
-    print(f"FIELD EXTRACTION DEBUG")
-    print(f"====================================")
+    safe_print(f"\n====================================")
+    safe_print(f"FIELD EXTRACTION DEBUG")
+    safe_print(f"====================================")
     mfg_item = next((d for d in consolidated_declarations if d["field"] == "MANUFACTURER"), None)
     if mfg_item:
-        print(f"MANUFACTURER\n  label = \"Manufactured by\"\n  value = \"{mfg_item['displayValue']}\"")
+        safe_print(f"MANUFACTURER\n  label = \"Manufactured by\"\n  value = \"{mfg_item['displayValue']}\"")
     else:
-        print(f"MANUFACTURER\n  status = NOT_DETECTED")
+        safe_print(f"MANUFACTURER\n  status = NOT_DETECTED")
 
     mfg_addr_item = next((d for d in consolidated_declarations if d["field"] == "MANUFACTURER_ADDRESS"), None)
     if mfg_addr_item:
-        print(f"MANUFACTURER_ADDRESS\n  value = \"{mfg_addr_item['displayValue']}\"")
+        safe_print(f"MANUFACTURER_ADDRESS\n  value = \"{mfg_addr_item['displayValue']}\"")
     else:
-        print(f"MANUFACTURER_ADDRESS\n  status = NOT_DETECTED")
+        safe_print(f"MANUFACTURER_ADDRESS\n  status = NOT_DETECTED")
 
     mfg_date_item = next((d for d in consolidated_declarations if d["field"] == "MANUFACTURE_DATE"), None)
     if mfg_date_item:
-        print(f"MANUFACTURE_DATE\n  label = \"Mfg. Date\"\n  value = \"{mfg_date_item['displayValue']}\"")
+        safe_print(f"MANUFACTURE_DATE\n  label = \"Mfg. Date\"\n  value = \"{mfg_date_item['displayValue']}\"")
     else:
-        print(f"MANUFACTURE_DATE\n  status = NOT_DETECTED")
+        safe_print(f"MANUFACTURE_DATE\n  status = NOT_DETECTED")
 
     exp_date_item = next((d for d in consolidated_declarations if d["field"] == "EXPIRY_DATE"), None)
     if exp_date_item:
-        print(f"EXPIRY_DATE\n  label = \"Expiry Date\"\n  value = \"{exp_date_item['displayValue']}\"")
+        safe_print(f"EXPIRY_DATE\n  label = \"Expiry Date\"\n  value = \"{exp_date_item['displayValue']}\"")
     else:
-        print(f"EXPIRY_DATE\n  status = NOT_DETECTED")
+        safe_print(f"EXPIRY_DATE\n  status = NOT_DETECTED")
 
     cc_email_item = next((d for d in consolidated_declarations if d["field"] == "CUSTOMER_CARE_EMAIL"), None)
     if cc_email_item:
-        print(f"CUSTOMER_CARE_EMAIL\n  context = \"Customer Care\"\n  value = \"{cc_email_item['displayValue']}\"")
+        safe_print(f"CUSTOMER_CARE_EMAIL\n  context = \"Customer Care\"\n  value = \"{cc_email_item['displayValue']}\"")
     else:
-        print(f"CUSTOMER_CARE_EMAIL\n  status = NOT_DETECTED")
+        safe_print(f"CUSTOMER_CARE_EMAIL\n  status = NOT_DETECTED")
 
     coo_item = next((d for d in consolidated_declarations if d["field"] == "COUNTRY_OF_ORIGIN"), None)
     if coo_item:
-        print(f"COUNTRY_OF_ORIGIN\n  label = \"Made in / Origin\"\n  value = \"{coo_item['displayValue']}\" (evidenceType: {coo_item.get('evidenceType', 'EXPLICIT')})")
+        safe_print(f"COUNTRY_OF_ORIGIN\n  label = \"Made in / Origin\"\n  value = \"{coo_item['displayValue']}\" (evidenceType: {coo_item.get('evidenceType', 'EXPLICIT')})")
     else:
-        print(f"COUNTRY_OF_ORIGIN\n  status = NOT_DETECTED")
-    print(f"====================================\n", flush=True)
+        safe_print(f"COUNTRY_OF_ORIGIN\n  status = NOT_DETECTED")
+    safe_print(f"====================================\n", flush=True)
 
     return consolidated_declarations
 
@@ -841,7 +1039,7 @@ def normalize_field_value(field: str, val: str, raw_text: str) -> dict:
         return {"displayValue": v, "normalizedValue": v, "unit": "unit", "flagVerify": True}
 
     elif field in ["MANUFACTURER", "PACKER", "IMPORTER"]:
-        clean_v = re.sub(r'(?i)^(?:mfd\.?|mfg\.?|manufactured|packed|imported|marketed)\s*(?:&|and)?\s*(?:marketed|packed|for)?\s*by[\s\:\-]*', '', v).strip()
+        clean_v = re.sub(r'(?i)^(?:mfd\.?|mfg\.?|manufactured|packed|imported|marketed)\s*(?:&|and)?\s*(?:marketed|packed|for)?\s*by[\s\:\.\-]*', '', v).strip()
         return {
             "displayValue": clean_v.title(),
             "normalizedValue": clean_v,

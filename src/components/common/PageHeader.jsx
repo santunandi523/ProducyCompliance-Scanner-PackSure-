@@ -1,12 +1,23 @@
 export default function PageHeader({ title, subtitle, actions, kicker }) {
   return (
-    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
+    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-7 animate-fade-in">
       <div>
-        {kicker && <div className="text-[11px] uppercase tracking-widest text-blue-700 font-semibold mb-1.5">{kicker}</div>}
-        <h1 className="font-display font-extrabold text-slate-900 text-2xl sm:text-3xl leading-tight">{title}</h1>
-        {subtitle && <p className="text-slate-500 text-sm mt-1.5 max-w-2xl">{subtitle}</p>}
+        {kicker && (
+          <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] font-bold px-2.5 py-0.5 rounded-full bg-[#D4A017]/10 text-[#F5C842] border border-[#D4A017]/25 mb-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#D4A017]" />
+            {kicker}
+          </div>
+        )}
+        <h1 className="font-display font-black text-2xl sm:text-3xl text-white tracking-tight leading-tight">
+          {title}
+        </h1>
+        {subtitle && (
+          <p className="text-sm mt-1.5 max-w-2xl leading-relaxed text-[#C8B89A]">
+            {subtitle}
+          </p>
+        )}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2.5 shrink-0">{actions}</div>}
     </div>
   );
 }

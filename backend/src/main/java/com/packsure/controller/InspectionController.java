@@ -65,9 +65,17 @@ public class InspectionController {
     }
 
     @GetMapping("/{id}/category")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getInspectionCategory(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getInspectionCategory(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
         Inspection inspection = inspectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Inspection not found with id: " + id));
+
+        if (user != null && "ROLE_OFFICER".equalsIgnoreCase(user.getRole())) {
+            if (inspection.getUser() != null && !inspection.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(403).body(ApiResponse.error("FORBIDDEN", "Access denied: You can only view your own inspections"));
+            }
+        }
 
         Map<String, Object> categoryInfo = Map.of(
                 "inspectionId", inspection.getId(),
@@ -135,16 +143,33 @@ public class InspectionController {
     }
 
     @GetMapping("/{id}/status")
-    public ResponseEntity<ApiResponse<Inspection>> getInspectionStatus(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Inspection>> getInspectionStatus(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
         Inspection inspection = inspectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Inspection not found with id: " + id));
+
+        if (user != null && "ROLE_OFFICER".equalsIgnoreCase(user.getRole())) {
+            if (inspection.getUser() != null && !inspection.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(403).body(ApiResponse.error("FORBIDDEN", "Access denied: You can only view your own inspections"));
+            }
+        }
+
         return ResponseEntity.ok(ApiResponse.ok(inspection));
     }
 
     @GetMapping("/{id}/results")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getInspectionResults(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getInspectionResults(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User user) {
         Inspection inspection = inspectionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Inspection not found with id: " + id));
+
+        if (user != null && "ROLE_OFFICER".equalsIgnoreCase(user.getRole())) {
+            if (inspection.getUser() != null && !inspection.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(403).body(ApiResponse.error("FORBIDDEN", "Access denied: You can only view your own inspections"));
+            }
+        }
 
         List<Declaration> declarations = declarationRepository.findByInspectionId(id);
         List<RuleEvaluation> evaluations = ruleEvaluationRepository.findByInspectionId(id);
@@ -173,16 +198,33 @@ public class InspectionController {
             @PathVariable Long id,
             @RequestBody Map<String, String> body,
             @AuthenticationPrincipal User user) {
+        Inspection inspection = inspectionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Inspection not found with id: " + id));
+
+        if (user != null && "ROLE_OFFICER".equalsIgnoreCase(user.getRole())) {
+            if (inspection.getUser() != null && !inspection.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(403).body(ApiResponse.error("FORBIDDEN", "Access denied: You can only finalize your own inspections"));
+            }
+        }
+
         String remarks = body != null ? body.get("remarks") : "Inspection completed";
         String status = body != null ? body.get("finalStatus") : "COMPLIANT";
         String officerName = user != null ? user.getFullName() : "Enforcement Officer";
 
-        Inspection inspection = inspectionService.finalizeInspection(id, remarks, status, officerName);
-        return ResponseEntity.ok(ApiResponse.ok(inspection, "Inspection finalized"));
+        Inspection finalized = inspectionService.finalizeInspection(id, remarks, status, officerName);
+        return ResponseEntity.ok(ApiResponse.ok(finalized, "Inspection finalized"));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<Inspection>>> listInspections() {
+    public ResponseEntity<ApiResponse<List<Inspection>>> listInspections(
+            @RequestParam(required = false) Long userId,
+            @AuthenticationPrincipal User user) {
+        if (user != null && "ROLE_OFFICER".equalsIgnoreCase(user.getRole())) {
+            return ResponseEntity.ok(ApiResponse.ok(inspectionRepository.findByUserIdOrderByCreatedAtDesc(user.getId())));
+        }
+        if (userId != null) {
+            return ResponseEntity.ok(ApiResponse.ok(inspectionRepository.findByUserIdOrderByCreatedAtDesc(userId)));
+        }
         return ResponseEntity.ok(ApiResponse.ok(inspectionRepository.findAllByOrderByCreatedAtDesc()));
     }
 

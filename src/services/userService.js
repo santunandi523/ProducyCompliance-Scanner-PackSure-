@@ -26,8 +26,18 @@ export const userService = {
     return res.data;
   },
 
+  async getUserInspections(id) {
+    const res = await api.get(`/admin/users/${id}/inspections`);
+    return res.data || [];
+  },
+
+  async getProfile() {
+    const res = await api.get("/users/profile");
+    return res.data;
+  },
+
   async changeSelfPassword(currentPassword, newPassword) {
-    const res = await api.post("/auth/change-password", { currentPassword, newPassword });
+    const res = await api.post("/users/change-password", { currentPassword, newPassword });
     return res.data;
   },
 };

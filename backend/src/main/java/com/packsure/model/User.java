@@ -40,12 +40,12 @@ public class User {
 
     public User() {}
 
-    public User(String username, String password, String fullName, String role, String employeeId, String location) {
+    public User(String username, String password, String fullName, String email, String role, String location) {
         this.username = username;
         this.password = password;
         this.fullName = fullName;
-        this.role = role;
-        this.employeeId = employeeId;
+        this.email = email;
+        this.role = role != null ? role : "ROLE_OFFICER";
         this.location = location;
         this.status = "ACTIVE";
         this.createdAt = LocalDateTime.now();

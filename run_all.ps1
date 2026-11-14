@@ -35,4 +35,8 @@ Write-Host "  - Admin:    username 'admin'   / password 'Admin@123'"
 Write-Host "========================================================`n" -ForegroundColor Green
 
 Start-Sleep -Seconds 2
-Start-Process "http://localhost:5173"
+try {
+    Start-Process "http://localhost:5173"
+} catch {
+    Write-Host "Please open http://localhost:5173 in your browser." -ForegroundColor Cyan
+}

@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import {
   UploadCloud, Camera, CheckCircle2, AlertTriangle, Loader2,
   FileCheck2, Download, ZoomIn, ZoomOut, Check, X,
-  ShieldCheck, RefreshCw, Smartphone, Plus, Eye, Layers, Trash2, ArrowRight
+  ShieldCheck, RefreshCw, Smartphone, Plus, Eye, Layers, Trash2, ArrowRight, Sparkles
 } from "lucide-react";
 import StatusBadge from "@/components/common/StatusBadge";
 import ConfidenceBar from "@/components/common/ConfidenceBar";
@@ -17,7 +17,7 @@ import { useAuth } from "@/context/AuthContext";
 const PIPELINE_STAGES = [
   { name: "Multi-Image Quality Assessment", desc: "Evaluating resolution, contrast, blur & glare across all captured package photos" },
   { name: "Preprocessing & Enhancement", desc: "Applying CLAHE contrast normalization & noise reduction" },
-  { name: "PaddleOCR PP-OCRv4", desc: "Executing deep text detection & bounding box localization on every image" },
+  { name: "RapidOCR PP-OCRv4", desc: "Executing deep text detection & bounding box localization on every image" },
   { name: "Barcode & QR Scanning", desc: "Scanning EAN-13, UPC and QR codes" },
   { name: "Legal Metrology Field Extraction", desc: "Extracting MRP, Net Qty, Manufacturer, Customer Care & Date declarations" },
   { name: "Multi-Image Information Fusion", desc: "Combining declarations across panels & resolving conflicting values" },
@@ -320,35 +320,41 @@ function ScanProductContent() {
   };
 
   return (
-    <div className={`space-y-6 ${fieldMode ? "bg-slate-900 text-white p-4 rounded-xl" : ""}`}>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+    <div className={`space-y-7 animate-fade-in ${fieldMode ? "bg-[#06060A] text-white p-5 rounded-2xl border border-[#D4A017]/30" : ""}`}>
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#252538] pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <ShieldCheck className="w-7 h-7 text-blue-600" />
-              Package Inspection Scanner
-            </h1>
-            {inspection && (
-              <span className="bg-blue-100 text-blue-800 text-xs font-mono font-bold px-2.5 py-0.5 rounded">
-                {inspection.inspectionNumber}
-              </span>
-            )}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D4A017] to-[#C9930A] flex items-center justify-center shadow-lg">
+              <ShieldCheck className="w-6 h-6 text-[#0A0A0F]" strokeWidth={2.4} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black text-white flex items-center gap-2">
+                <span>Commodity Compliance Scanner</span>
+                {inspection && (
+                  <span className="bg-[#D4A017]/20 text-[#F5C842] text-xs font-mono font-bold px-2.5 py-0.5 rounded-md border border-[#D4A017]/30">
+                    {inspection.inspectionNumber}
+                  </span>
+                )}
+              </h1>
+              <p className="text-xs text-[#9E927C] mt-0.5">
+                Legal Metrology Act, 2009 · Multi-Panel Evidence Capture & Autonomous Corroboration
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-slate-500 mt-0.5">
-            Legal Metrology Act, 2009 · Single Camera Session Multi-Photo Evidence Capture
-          </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={() => setFieldMode(!fieldMode)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border transition ${
-              fieldMode ? "bg-blue-600 text-white border-blue-500" : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+            className={`flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl border transition cursor-pointer ${
+              fieldMode
+                ? "btn-gold"
+                : "bg-[#161622] text-[#F5E8C7] border-[#252538] hover:border-[#D4A017]/40"
             }`}
           >
-            <Smartphone className="w-4 h-4" />
-            Field Mode
+            <Smartphone className="w-4 h-4 text-[#D4A017]" />
+            <span>High Contrast Field Mode</span>
           </button>
 
           {stage === "workspace" && (
@@ -363,10 +369,10 @@ function ScanProductContent() {
                 setEvaluations([]);
                 setReportData(null);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition"
+              className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold rounded-xl bg-[#1E1E2E] hover:bg-[#252538] text-[#F5E8C7] border border-[#2A2A3D] transition cursor-pointer"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
-              New Scan Session
+              <RefreshCw className="w-3.5 h-3.5 text-[#F5C842]" />
+              <span>New Scan Session</span>
             </button>
           )}
         </div>
@@ -377,22 +383,22 @@ function ScanProductContent() {
         <div className="max-w-4xl mx-auto space-y-6 py-2">
           {/* Active Camera Viewport */}
           {isCameraOpen ? (
-            <div className="bg-slate-950 rounded-2xl overflow-hidden relative shadow-2xl border border-slate-800">
-              <video ref={videoRef} autoPlay playsInline className="w-full h-[400px] object-cover" />
+            <div className="bg-[#0A0A0F] rounded-2xl overflow-hidden relative shadow-2xl border border-[#D4A017]/30">
+              <video ref={videoRef} autoPlay playsInline className="w-full h-[440px] object-cover" />
 
               {/* Viewfinder overlay */}
-              <div className="absolute inset-0 pointer-events-none border-2 border-dashed border-white/50 m-6 rounded-xl flex items-center justify-center">
-                <span className="bg-black/60 text-white text-xs px-3 py-1.5 rounded-full font-semibold backdrop-blur-md">
-                  Align Package Panel · Tap "Capture Photo" as many times as needed
+              <div className="absolute inset-0 pointer-events-none border-2 border-dashed border-[#F5C842]/50 m-6 rounded-2xl flex items-center justify-center">
+                <span className="bg-[#0A0A0F]/80 text-[#F5E8C7] text-xs px-4 py-2 rounded-full font-bold backdrop-blur-md border border-[#D4A017]/40 shadow-xl">
+                  Align Package Panel · Tap "Capture Photo" for all panels (Front, Back, Nutrition, MRP)
                 </span>
               </div>
 
               {/* Camera Action Toolbar */}
-              <div className="absolute bottom-4 inset-x-0 flex items-center justify-between px-6">
+              <div className="absolute bottom-5 inset-x-0 flex items-center justify-between px-7">
                 <button
                   type="button"
                   onClick={stopCameraSession}
-                  className="bg-white/20 hover:bg-white/30 text-white text-xs font-semibold px-4 py-2 rounded-xl backdrop-blur-md transition"
+                  className="bg-[#0A0A0F]/80 hover:bg-[#1E1E2E] text-white text-xs font-bold px-4 py-2.5 rounded-xl backdrop-blur-md border border-[#252538] transition cursor-pointer"
                 >
                   Close Camera
                 </button>
@@ -400,38 +406,41 @@ function ScanProductContent() {
                 <button
                   type="button"
                   onClick={capturePhoto}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-full shadow-lg flex items-center gap-2 transition text-sm hover:scale-105 active:scale-95"
+                  className="btn-gold font-black px-7 py-3.5 rounded-full shadow-2xl flex items-center gap-2.5 transition text-sm hover:scale-105 active:scale-95 cursor-pointer"
                 >
-                  <Camera className="w-5 h-5" /> CAPTURE PHOTO
+                  <Camera className="w-5 h-5 text-black" />
+                  <span>CAPTURE PANEL PHOTO</span>
                 </button>
 
-                <div className="bg-black/60 text-white text-xs font-mono font-bold px-3 py-2 rounded-xl backdrop-blur-md">
-                  Captured: {capturedImages.length}
+                <div className="bg-[#0A0A0F]/80 text-[#F5C842] text-xs font-mono font-bold px-4 py-2.5 rounded-xl backdrop-blur-md border border-[#D4A017]/30 shadow-lg">
+                  Photos: {capturedImages.length}
                 </div>
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-4 shadow-sm">
-              <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+            <div className="bg-[#111118] rounded-2xl border border-[#D4A017]/25 p-10 text-center space-y-5 shadow-2xl">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#D4A017]/20 to-[#7C3AED]/20 border border-[#D4A017]/30 text-[#F5C842] flex items-center justify-center mx-auto shadow-inner">
                 <Camera className="w-8 h-8" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-lg">Single Camera Session Capture</h3>
-                <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
-                  Open the camera once and capture all visible package sides (Front, Back, Sides, MRP & Customer Care close-ups). Tap <strong>SCAN</strong> when finished.
+                <h3 className="font-display font-black text-white text-xl">Single Session Multi-Angle Evidence Intake</h3>
+                <p className="text-xs text-[#C8B89A] max-w-lg mx-auto mt-1.5 leading-relaxed">
+                  Open the camera once and capture all visible package sides (Front label, Back statutory panel, Net Weight, MRP &amp; Customer Care close-ups). PackSure fuses all sides into one unified audit.
                 </p>
               </div>
 
-              <div className="flex flex-wrap justify-center gap-3 pt-2">
+              <div className="flex flex-wrap justify-center gap-3.5 pt-3">
                 <button
                   onClick={startCameraSession}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-6 py-3 rounded-xl shadow-md flex items-center gap-2 transition hover:scale-105"
+                  className="btn-gold font-bold text-xs px-6 py-3 rounded-xl shadow-xl flex items-center gap-2 transition hover:scale-105 cursor-pointer"
                 >
-                  <Camera className="w-5 h-5" /> OPEN CAMERA
+                  <Camera className="w-4 h-4 text-black" />
+                  <span>LAUNCH LIVE CAMERA</span>
                 </button>
 
-                <label className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm px-5 py-3 rounded-xl border border-slate-300 cursor-pointer transition flex items-center gap-2">
-                  <UploadCloud className="w-4 h-4 text-slate-600" /> Select Image Files
+                <label className="bg-[#1E1E2E] hover:bg-[#252538] text-[#F5E8C7] hover:text-[#F5C842] font-bold text-xs px-5 py-3 rounded-xl border border-[#D4A017]/20 cursor-pointer transition flex items-center gap-2 shadow-sm">
+                  <UploadCloud className="w-4 h-4 text-[#D4A017]" />
+                  <span>Upload Local Photos</span>
                   <input
                     type="file"
                     multiple
@@ -446,28 +455,29 @@ function ScanProductContent() {
 
           {/* Captured Photos Thumbnail Collection Bar */}
           {capturedImages.length > 0 && (
-            <div className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-sm">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-blue-600" /> Captured Package Photos ({capturedImages.length})
+            <div className="bg-[#111118] rounded-2xl border border-[#D4A017]/25 p-6 space-y-5 shadow-xl">
+              <div className="flex items-center justify-between border-b border-[#252538] pb-3.5">
+                <div className="font-bold text-sm text-white flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-[#D4A017]" />
+                  <span>Captured Package Panels ({capturedImages.length})</span>
                 </div>
-                <span className="text-xs text-slate-500 font-medium">
-                  Review captured photos or remove bad shots before scanning
+                <span className="text-xs text-[#9E927C] font-medium">
+                  Review captured panels or delete blurry shots before execution
                 </span>
               </div>
 
               {/* Thumbnails Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3.5">
                 {capturedImages.map((item, idx) => (
-                  <div key={item.id} className="relative group rounded-xl overflow-hidden border border-slate-200 bg-slate-900 aspect-square">
-                    <img src={item.previewUrl} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
-                    <span className="absolute top-1 left-1 bg-black/70 text-white text-[10px] font-mono px-1.5 py-0.5 rounded font-bold">
-                      #{idx + 1}
+                  <div key={item.id} className="relative group rounded-xl overflow-hidden border border-[#D4A017]/25 bg-[#0A0A0F] aspect-square shadow-md">
+                    <img src={item.previewUrl} alt={`Panel ${idx + 1}`} className="w-full h-full object-cover" />
+                    <span className="absolute top-1.5 left-1.5 bg-[#0A0A0F]/85 text-[#F5C842] text-[10px] font-mono px-2 py-0.5 rounded-md font-bold border border-[#D4A017]/30">
+                      Panel #{idx + 1}
                     </span>
                     <button
                       onClick={() => handleRemoveCapturedImage(item.id)}
-                      className="absolute top-1 right-1 bg-rose-600 hover:bg-rose-700 text-white p-1 rounded-md shadow transition opacity-90 hover:opacity-100"
-                      title="Remove image"
+                      className="absolute top-1.5 right-1.5 bg-rose-600/90 hover:bg-rose-600 text-white p-1 rounded-md shadow-lg transition opacity-90 hover:opacity-100 cursor-pointer"
+                      title="Remove panel photo"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -476,18 +486,22 @@ function ScanProductContent() {
               </div>
 
               {/* SCAN / SUBMIT BUTTON */}
-              <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-                <div className="text-xs text-slate-500">
-                  Ready to process <strong className="text-slate-800">{capturedImages.length}</strong> photo(s) into one consolidated Legal Metrology inspection.
+              <div className="flex flex-col sm:flex-row items-center justify-between border-t border-[#252538] pt-4 gap-4">
+                <div className="text-xs text-[#C8B89A]">
+                  Ready to analyze <strong className="text-white">{capturedImages.length}</strong> photo(s) using RapidOCR &amp; Legal Metrology rule engine.
                 </div>
 
                 <button
                   onClick={handleExecuteScan}
                   disabled={isScanning}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base px-8 py-3 rounded-xl shadow-lg flex items-center gap-2 transition hover:scale-105 active:scale-95 disabled:opacity-50"
+                  className="btn-gold font-black text-sm px-8 py-3.5 rounded-xl shadow-2xl flex items-center gap-2.5 transition hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer w-full sm:w-auto justify-center"
                 >
-                  {isScanning ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
-                  SCAN NOW ({capturedImages.length} Photos)
+                  {isScanning ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-black" />
+                  ) : (
+                    <ArrowRight className="w-5 h-5 text-black" />
+                  )}
+                  <span>EXECUTE COMPLIANCE SCAN ({capturedImages.length} Photos)</span>
                 </button>
               </div>
             </div>
@@ -497,29 +511,35 @@ function ScanProductContent() {
 
       {/* STAGE 2: PROCESSING STATE */}
       {stage === "processing" && (
-        <div className="max-w-xl mx-auto bg-white rounded-2xl border border-slate-200 p-8 shadow-xl text-center space-y-6">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto" />
+        <div className="max-w-xl mx-auto bg-[#111118] rounded-2xl border border-[#D4A017]/30 p-9 shadow-2xl text-center space-y-6 relative overflow-hidden">
+          {/* Subtle gold scanning animation line */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#D4A017] to-transparent animate-shimmer" />
+
+          <div className="w-16 h-16 rounded-2xl bg-[#D4A017]/15 border border-[#D4A017]/30 flex items-center justify-center mx-auto text-[#F5C842] shadow-inner">
+            <Loader2 className="w-8 h-8 animate-spin" />
+          </div>
+
           <div>
-            <h2 className="text-xl font-bold text-slate-900">Processing Multi-Image Package Scan</h2>
-            <p className="text-xs text-slate-500 mt-1">
-              Fusing text, declarations & Legal Metrology rules across {capturedImages.length} package photos...
+            <h2 className="text-2xl font-black text-white">Multi-Panel AI Analysis in Progress</h2>
+            <p className="text-xs text-[#C8B89A] mt-1.5 leading-relaxed">
+              Fusing text detections, field declarations &amp; Legal Metrology statutory rules across {capturedImages.length} package photos...
             </p>
           </div>
 
-          <div className="space-y-3 text-left bg-slate-50 p-4 rounded-xl border border-slate-200">
+          <div className="space-y-3 text-left bg-[#161622] p-5 rounded-xl border border-[#252538] shadow-inner">
             {PIPELINE_STAGES.map((stg, idx) => {
               const isDone = idx < activePipelineIndex;
               const isCurrent = idx === activePipelineIndex;
               return (
                 <div key={stg.name} className="flex items-center gap-3 text-xs">
                   {isDone ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                   ) : isCurrent ? (
-                    <Loader2 className="w-4 h-4 text-blue-600 animate-spin flex-shrink-0" />
+                    <Loader2 className="w-4 h-4 text-[#F5C842] animate-spin shrink-0" />
                   ) : (
-                    <div className="w-4 h-4 rounded-full border border-slate-300 flex-shrink-0" />
+                    <div className="w-4 h-4 rounded-full border border-[#3D382F] shrink-0" />
                   )}
-                  <span className={isDone ? "font-semibold text-slate-800" : isCurrent ? "font-bold text-blue-600" : "text-slate-400"}>
+                  <span className={isDone ? "font-semibold text-[#D4C4A8]" : isCurrent ? "font-black text-[#F5C842]" : "text-[#6E6454]"}>
                     {stg.name}
                   </span>
                 </div>
@@ -531,7 +551,7 @@ function ScanProductContent() {
 
       {/* STAGE 3: WORKSPACE (3-PANEL REVIEW & EVIDENCE VIEWER) */}
       {stage === "workspace" && inspection && (
-        <div className="space-y-6">
+        <div className="space-y-7">
           {/* Product Category Banner */}
           <ProductCategoryBanner
             inspection={inspection}
@@ -549,292 +569,309 @@ function ScanProductContent() {
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* LEFT PANEL: EVIDENCE IMAGE & SVG BOUNDING BOXES (5 cols) */}
-          <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <div className="font-semibold text-xs text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Eye className="w-4 h-4 text-blue-600" /> Package Evidence ({selectedImageIndex + 1}/{images.length})
-              </div>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setZoomLevel((z) => Math.max(0.8, z - 0.2))} className="p-1 rounded hover:bg-slate-100">
-                  <ZoomOut className="w-4 h-4 text-slate-600" />
-                </button>
-                <span className="text-xs font-mono font-bold text-slate-600 px-1">{Math.round(zoomLevel * 100)}%</span>
-                <button onClick={() => setZoomLevel((z) => Math.min(2.5, z + 0.2))} className="p-1 rounded hover:bg-slate-100">
-                  <ZoomIn className="w-4 h-4 text-slate-600" />
-                </button>
-              </div>
-            </div>
-
-            {/* Thumbnail Carousel */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-100">
-              {images.map((img, idx) => (
-                <button
-                  key={img.id}
-                  onClick={() => setSelectedImageIndex(idx)}
-                  className={`relative rounded-lg overflow-hidden border-2 flex-shrink-0 transition ${
-                    selectedImageIndex === idx ? "border-blue-600 ring-2 ring-blue-100" : "border-slate-200 opacity-70 hover:opacity-100"
-                  }`}
-                >
-                  <img
-                    src={`http://localhost:8081/api/inspections/images/${img.id}/content`}
-                    alt="Side"
-                    className="w-14 h-14 object-cover"
-                  />
-                  <span className="absolute bottom-0 inset-x-0 bg-slate-900/80 text-white text-[9px] font-bold text-center py-0.5">
-                    {img.imageType || `#${idx + 1}`}
+            {/* LEFT PANEL: EVIDENCE IMAGE & SVG BOUNDING BOXES (5 cols) */}
+            <div className="lg:col-span-5 bg-[#111118] rounded-2xl border border-[#D4A017]/20 p-5 shadow-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-[#252538] pb-3.5">
+                <div className="font-bold text-xs text-[#F5C842] uppercase tracking-wider flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-[#D4A017]" />
+                  <span>Package Evidence ({selectedImageIndex + 1}/{images.length})</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => setZoomLevel((z) => Math.max(0.8, z - 0.2))}
+                    className="p-1.5 rounded-lg bg-[#1E1E2E] hover:bg-[#252538] text-[#C8B89A] transition cursor-pointer"
+                    title="Zoom Out"
+                  >
+                    <ZoomOut className="w-4 h-4" />
+                  </button>
+                  <span className="text-xs font-mono font-bold text-white px-1.5">
+                    {Math.round(zoomLevel * 100)}%
                   </span>
-                </button>
-              ))}
-
-              {/* Add Post-Scan Image Button */}
-              <label className="w-14 h-14 rounded-lg border-2 border-dashed border-blue-400 bg-blue-50/50 hover:bg-blue-100/50 flex flex-col items-center justify-center cursor-pointer flex-shrink-0 transition">
-                {addingNewImage ? (
-                  <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
-                ) : (
-                  <>
-                    <Plus className="w-5 h-5 text-blue-600" />
-                    <span className="text-[9px] font-bold text-blue-700">+ Photo</span>
-                  </>
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      handleAddPostScanImage(e.target.files[0]);
-                    }
-                  }}
-                />
-              </label>
-            </div>
-
-            {/* Image Preview & SVG Bounding Boxes Overlay */}
-            <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-slate-950 flex items-center justify-center min-h-[350px]">
-              {images[selectedImageIndex] && (
-                <div style={{ transform: `scale(${zoomLevel})`, transformOrigin: "top left" }} className="relative transition-transform duration-200 w-full">
-                  <img
-                    src={`http://localhost:8081/api/inspections/images/${images[selectedImageIndex].id}/content`}
-                    alt="Inspection Evidence"
-                    className="w-full h-auto block"
-                  />
-
-                  {/* SVG Overlay for Bounding Boxes */}
-                  <svg className="absolute inset-0 w-full h-full pointer-events-none">
-                    {declarations.map((d) => {
-                      if (!d.xPct && !d.yPct) return null;
-                      const isSelected = selectedDeclaration?.id === d.id;
-                      return (
-                        <g key={d.id}>
-                          <rect
-                            x={`${d.xPct}%`}
-                            y={`${d.yPct}%`}
-                            width={`${d.widthPct || 20}%`}
-                            height={`${d.heightPct || 8}%`}
-                            fill={isSelected ? "rgba(59, 130, 246, 0.25)" : "rgba(16, 185, 129, 0.15)"}
-                            stroke={isSelected ? "#2563eb" : "#10b981"}
-                            strokeWidth={isSelected ? "3" : "2"}
-                            rx="4"
-                          />
-                          <text
-                            x={`${d.xPct}%`}
-                            y={`${Math.max(0, d.yPct - 2)}%`}
-                            fill={isSelected ? "#1e40af" : "#065f46"}
-                            fontSize="10"
-                            fontWeight="bold"
-                          >
-                            {d.fieldName} ({Math.round((d.finalConfidence || 0.9) * 100)}%)
-                          </text>
-                        </g>
-                      );
-                    })}
-                  </svg>
+                  <button
+                    onClick={() => setZoomLevel((z) => Math.min(2.5, z + 0.2))}
+                    className="p-1.5 rounded-lg bg-[#1E1E2E] hover:bg-[#252538] text-[#C8B89A] transition cursor-pointer"
+                    title="Zoom In"
+                  >
+                    <ZoomIn className="w-4 h-4" />
+                  </button>
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* CENTER PANEL: FUSED DECLARATIONS & OFFICER VERIFICATION (4 cols) */}
-          <div className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <div className="font-semibold text-xs text-slate-700 uppercase tracking-wider">
-                Fused Declarations ({declarations.length})
               </div>
-              <div className="text-xs font-bold text-slate-500">
-                Score: <span className="text-blue-600 font-mono">{screeningScore}%</span>
-              </div>
-            </div>
 
-            {/* Conflict Warning */}
-            {declarations.some((d) => d.conflictDetected) && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-900 rounded-xl p-3 text-xs space-y-1">
-                <div className="font-bold flex items-center gap-1 text-rose-800">
-                  <AlertTriangle className="w-4 h-4 text-rose-600" /> Conflicting Values Across Images!
-                </div>
-                <p className="text-slate-700">
-                  Different package sides produced conflicting values. Officer visual verification is required.
-                </p>
-              </div>
-            )}
-
-            {/* Declarations List */}
-            <div className="space-y-3 overflow-y-auto max-h-[600px] pr-1">
-              {declarations.map((d) => {
-                const isEditing = editingDeclId === d.id;
-                const isSelected = selectedDeclaration?.id === d.id;
-                return (
-                  <div
-                    key={d.id}
-                    onClick={() => handleSelectDeclarationCard(d)}
-                    className={`p-3.5 rounded-xl border transition cursor-pointer ${
-                      isSelected
-                        ? "border-blue-500 bg-blue-50/50 ring-2 ring-blue-100"
-                        : d.conflictDetected
-                        ? "border-rose-300 bg-rose-50/30"
-                        : "border-slate-200 bg-white hover:border-slate-300"
+              {/* Thumbnail Carousel */}
+              <div className="flex items-center gap-2.5 overflow-x-auto pb-2 border-b border-[#252538]">
+                {images.map((img, idx) => (
+                  <button
+                    key={img.id}
+                    onClick={() => setSelectedImageIndex(idx)}
+                    className={`relative rounded-xl overflow-hidden border-2 shrink-0 transition cursor-pointer ${
+                      selectedImageIndex === idx
+                        ? "border-[#D4A017] ring-2 ring-[#D4A017]/30 shadow-lg"
+                        : "border-[#252538] opacity-70 hover:opacity-100"
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-xs text-slate-800 uppercase tracking-wider">{d.fieldName}</span>
-                      <ConfidenceBar value={d.finalConfidence || 0.85} />
-                    </div>
+                    <img
+                      src={inspectionService.getImageContentUrl(img.id)}
+                      alt="Panel"
+                      className="w-14 h-14 object-cover"
+                    />
+                    <span className="absolute bottom-0 inset-x-0 bg-[#0A0A0F]/85 text-[#F5E8C7] text-[9px] font-bold text-center py-0.5">
+                      {img.imageType || `Panel #${idx + 1}`}
+                    </span>
+                  </button>
+                ))}
 
-                    {isEditing ? (
-                      <div className="mt-2 flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={editValue}
-                          onChange={(e) => setEditValue(e.target.value)}
-                          className="w-full border border-slate-300 rounded px-2 py-1 text-xs"
-                        />
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleVerifyDeclaration(d, true, editValue);
-                          }}
-                          className="bg-emerald-600 text-white p-1 rounded hover:bg-emerald-700"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingDeclId(null);
-                          }}
-                          className="bg-slate-200 text-slate-600 p-1 rounded hover:bg-slate-300"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between mt-1">
-                        <div className="text-sm font-semibold text-slate-900">
-                          {d.officerValue || d.displayValue || d.detectedValue}
-                          {d.fieldName === "COUNTRY_OF_ORIGIN" && d.evidenceType === "INFERRED_FROM_MANUFACTURER_ADDRESS" && (
-                            <span className="block text-[11px] font-normal text-amber-700 mt-0.5">
-                              inferred from manufacturer address
-                            </span>
-                          )}
-                        </div>
+                {/* Add Post-Scan Image Button */}
+                <label className="w-14 h-14 rounded-xl border-2 border-dashed border-[#D4A017]/40 bg-[#161622] hover:bg-[#1E1E2E] flex flex-col items-center justify-center cursor-pointer shrink-0 transition">
+                  {addingNewImage ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-[#D4A017]" />
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4 text-[#F5C842]" />
+                      <span className="text-[9px] font-bold text-[#F5C842] mt-0.5">+ Panel</span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) {
+                        handleAddPostScanImage(e.target.files[0]);
+                      }
+                    }}
+                  />
+                </label>
+              </div>
 
-                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => handleVerifyDeclaration(d, true)}
-                            className={`px-2 py-1 text-[11px] font-bold rounded transition ${
-                              d.officerVerified
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-slate-100 hover:bg-emerald-50 text-slate-700 border border-slate-200"
-                            }`}
-                          >
-                            ✓ Verify
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingDeclId(d.id);
-                              setEditValue(d.officerValue || d.displayValue || d.detectedValue || "");
-                            }}
-                            className="px-2 py-1 text-[11px] font-semibold rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200"
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      </div>
-                    )}
+              {/* Image Preview & SVG Bounding Boxes Overlay */}
+              <div className="relative overflow-hidden rounded-xl border border-[#252538] bg-[#0A0A0F] flex items-center justify-center min-h-[380px] shadow-inner">
+                {images[selectedImageIndex] && (
+                  <div style={{ transform: `scale(${zoomLevel})`, transformOrigin: "top left" }} className="relative transition-transform duration-200 w-full">
+                    <img
+                      src={inspectionService.getImageContentUrl(images[selectedImageIndex].id)}
+                      alt="Inspection Evidence"
+                      className="w-full h-auto block"
+                    />
+
+                    {/* SVG Overlay for Bounding Boxes */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                      {declarations.map((d) => {
+                        if (!d.xPct && !d.yPct) return null;
+                        const isSelected = selectedDeclaration?.id === d.id;
+                        return (
+                          <g key={d.id}>
+                            <rect
+                              x={`${d.xPct}%`}
+                              y={`${d.yPct}%`}
+                              width={`${d.widthPct || 20}%`}
+                              height={`${d.heightPct || 8}%`}
+                              fill={isSelected ? "rgba(212, 160, 23, 0.3)" : "rgba(124, 58, 237, 0.2)"}
+                              stroke={isSelected ? "#F5C842" : "#7C3AED"}
+                              strokeWidth={isSelected ? "3" : "2"}
+                              rx="4"
+                            />
+                            <text
+                              x={`${d.xPct}%`}
+                              y={`${Math.max(0, d.yPct - 2)}%`}
+                              fill={isSelected ? "#F5C842" : "#C084FC"}
+                              fontSize="11"
+                              fontWeight="bold"
+                            >
+                              {d.fieldName} ({Math.round((d.finalConfidence || 0.9) * 100)}%)
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* RIGHT PANEL: RULE EVALUATIONS & FINAL DECISION (3 cols) */}
-          <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-200 p-4 shadow-sm space-y-4">
-            <div className="border-b border-slate-200 pb-3">
-              <div className="font-semibold text-xs text-slate-700 uppercase tracking-wider">
-                PCR 2011 Rule Findings ({evaluations.length})
+                )}
               </div>
             </div>
 
-            <div className="space-y-3 overflow-y-auto max-h-[350px]">
-              {evaluations.map((ev) => (
-                <div key={ev.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50 space-y-1.5 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-800">{ev.rule?.ruleCode || ev.fieldName}</span>
-                    <StatusBadge status={ev.result} />
-                  </div>
-                  <p className="text-slate-600 text-[11px] leading-relaxed">{ev.reasoning}</p>
+            {/* CENTER PANEL: FUSED DECLARATIONS & OFFICER VERIFICATION (4 cols) */}
+            <div className="lg:col-span-4 bg-[#111118] rounded-2xl border border-[#D4A017]/20 p-5 shadow-xl space-y-4">
+              <div className="flex items-center justify-between border-b border-[#252538] pb-3.5">
+                <div className="font-bold text-xs text-[#F5C842] uppercase tracking-wider">
+                  Fused Declarations ({declarations.length})
                 </div>
-              ))}
+                <div className="text-xs font-bold text-[#9E927C]">
+                  Score: <span className="text-[#F5C842] font-mono">{screeningScore}%</span>
+                </div>
+              </div>
+
+              {/* Conflict Warning */}
+              {declarations.some((d) => d.conflictDetected) && (
+                <div className="bg-rose-950/30 border border-rose-500/40 text-rose-200 rounded-xl p-3.5 text-xs space-y-1 shadow-sm">
+                  <div className="font-bold flex items-center gap-1.5 text-rose-300">
+                    <AlertTriangle className="w-4 h-4 text-rose-400" />
+                    <span>Conflicting Values Across Images!</span>
+                  </div>
+                  <p className="text-[#D4C4A8] text-[11px] leading-relaxed">
+                    Different package sides produced conflicting values. Officer visual verification is required.
+                  </p>
+                </div>
+              )}
+
+              {/* Declarations List */}
+              <div className="space-y-3 overflow-y-auto max-h-[620px] pr-1">
+                {declarations.map((d) => {
+                  const isEditing = editingDeclId === d.id;
+                  const isSelected = selectedDeclaration?.id === d.id;
+                  return (
+                    <div
+                      key={d.id}
+                      onClick={() => handleSelectDeclarationCard(d)}
+                      className={`p-4 rounded-xl border transition cursor-pointer ${
+                        isSelected
+                          ? "border-[#D4A017] bg-[#D4A017]/10 ring-2 ring-[#D4A017]/25 shadow-md"
+                          : d.conflictDetected
+                          ? "border-rose-500/40 bg-rose-950/20"
+                          : "border-[#252538] bg-[#161622] hover:border-[#D4A017]/30"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="font-bold text-xs text-white uppercase tracking-wider">{d.fieldName}</span>
+                        <ConfidenceBar value={d.finalConfidence || 0.85} />
+                      </div>
+
+                      {isEditing ? (
+                        <div className="mt-2.5 flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            className="w-full input-dark px-2.5 py-1.5 text-xs text-white"
+                          />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleVerifyDeclaration(d, true, editValue);
+                            }}
+                            className="bg-emerald-600 hover:bg-emerald-500 text-white p-1.5 rounded-lg cursor-pointer"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingDeclId(null);
+                            }}
+                            className="bg-[#252538] hover:bg-[#3D382F] text-[#C8B89A] p-1.5 rounded-lg cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between mt-2">
+                          <div className="text-sm font-semibold text-white">
+                            {d.officerValue || d.displayValue || d.detectedValue}
+                            {d.fieldName === "COUNTRY_OF_ORIGIN" && d.evidenceType === "INFERRED_FROM_MANUFACTURER_ADDRESS" && (
+                              <span className="block text-[10px] font-normal text-[#F5C842] mt-0.5">
+                                inferred from manufacturer address
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => handleVerifyDeclaration(d, true)}
+                              className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition cursor-pointer ${
+                                d.officerVerified
+                                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                  : "bg-[#1E1E2E] hover:bg-emerald-500/20 text-[#D4C4A8] border border-[#252538]"
+                              }`}
+                            >
+                              ✓ Verify
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingDeclId(d.id);
+                                setEditValue(d.officerValue || d.displayValue || d.detectedValue || "");
+                              }}
+                              className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-[#1E1E2E] hover:bg-[#252538] text-[#F5E8C7] border border-[#252538] cursor-pointer"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* Finalization Box */}
-            <div className="border-t border-slate-200 pt-4 space-y-3">
-              <div className="font-bold text-xs text-slate-800 uppercase tracking-wider">Final Enforcement Decision</div>
-              <select
-                value={selectedFinalStatus}
-                onChange={(e) => setSelectedFinalStatus(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg p-2 text-xs font-semibold bg-white"
-              >
-                <option value="COMPLIANT">COMPLIANT (Pass)</option>
-                <option value="NEEDS_FURTHER_REVIEW">NEEDS FURTHER REVIEW</option>
-                <option value="POTENTIAL_NON_COMPLIANCE">POTENTIAL NON-COMPLIANCE</option>
-              </select>
+            {/* RIGHT PANEL: RULE EVALUATIONS & FINAL DECISION (3 cols) */}
+            <div className="lg:col-span-3 bg-[#111118] rounded-2xl border border-[#D4A017]/20 p-5 shadow-xl space-y-4">
+              <div className="border-b border-[#252538] pb-3.5">
+                <div className="font-bold text-xs text-[#F5C842] uppercase tracking-wider">
+                  PCR 2011 Rule Findings ({evaluations.length})
+                </div>
+              </div>
 
-              <textarea
-                value={finalRemarks}
-                onChange={(e) => setFinalRemarks(e.target.value)}
-                rows={2}
-                placeholder="Officer remarks..."
-                className="w-full border border-slate-300 rounded-lg p-2 text-xs"
-              />
+              <div className="space-y-2.5 overflow-y-auto max-h-[360px] pr-1">
+                {evaluations.map((ev) => (
+                  <div key={ev.id} className="p-3.5 rounded-xl border border-[#252538] bg-[#161622] space-y-1.5 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-white">{ev.rule?.ruleCode || ev.fieldName}</span>
+                      <StatusBadge status={ev.result} />
+                    </div>
+                    <p className="text-[#9E927C] text-[11px] leading-relaxed">{ev.reasoning}</p>
+                  </div>
+                ))}
+              </div>
 
-              <button
-                onClick={handleFinalize}
-                disabled={finalizing || inspection.status === "FINALIZED"}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl shadow-sm text-xs flex items-center justify-center gap-2 transition disabled:opacity-50"
-              >
-                {finalizing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <FileCheck2 className="w-4 h-4" />
-                )}
-                {inspection.status === "FINALIZED" ? "Inspection Finalized" : "Finalize & Lock Inspection"}
-              </button>
-
-              {reportData && (
-                <a
-                  href={inspectionService.getReportDownloadUrl(reportData.id || inspection.id)}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl shadow-sm text-xs flex items-center justify-center gap-2 transition text-center"
+              {/* Finalization Box */}
+              <div className="border-t border-[#252538] pt-4 space-y-3.5">
+                <div className="font-bold text-xs text-[#F5C842] uppercase tracking-wider">
+                  Final Enforcement Determination
+                </div>
+                <select
+                  value={selectedFinalStatus}
+                  onChange={(e) => setSelectedFinalStatus(e.target.value)}
+                  className="w-full input-dark p-2.5 text-xs font-bold text-white focus:outline-none"
                 >
-                  <Download className="w-4 h-4" /> Download Court-Ready PDF
-                </a>
-              )}
+                  <option value="COMPLIANT" className="bg-[#111118] text-white">COMPLIANT (Statutory Pass)</option>
+                  <option value="NEEDS_FURTHER_REVIEW" className="bg-[#111118] text-white">NEEDS FURTHER REVIEW</option>
+                  <option value="POTENTIAL_NON_COMPLIANCE" className="bg-[#111118] text-white">POTENTIAL NON-COMPLIANCE</option>
+                </select>
+
+                <textarea
+                  value={finalRemarks}
+                  onChange={(e) => setFinalRemarks(e.target.value)}
+                  rows={2}
+                  placeholder="Officer remarks..."
+                  className="w-full input-dark p-2.5 text-xs text-white"
+                />
+
+                <button
+                  onClick={handleFinalize}
+                  disabled={finalizing || inspection.status === "FINALIZED"}
+                  className="w-full btn-gold font-bold py-3 rounded-xl shadow-lg text-xs flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer"
+                >
+                  {finalizing ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-black" />
+                  ) : (
+                    <FileCheck2 className="w-4 h-4 text-black" />
+                  )}
+                  <span>{inspection.status === "FINALIZED" ? "Inspection Finalized" : "Finalize & Sign Inspection"}</span>
+                </button>
+
+                {reportData && (
+                  <a
+                    href={inspectionService.getReportDownloadUrl(reportData.id || inspection.id)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg text-xs flex items-center justify-center gap-2 transition text-center cursor-pointer"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Court-Ready PDF</span>
+                  </a>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
       )}
     </div>
   );

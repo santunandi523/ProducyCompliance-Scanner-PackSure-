@@ -13,5 +13,20 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('recharts')) return 'charts';
+            if (id.includes('jspdf')) return 'pdf';
+            if (id.includes('lucide-react')) return 'ui';
+            return 'vendor';
+          }
+        },
+      },
+    },
+  },
 })
 

@@ -2,6 +2,7 @@ package com.packsure.config;
 
 import com.packsure.model.Rule;
 import com.packsure.model.User;
+import com.packsure.repository.InspectionRepository;
 import com.packsure.repository.RuleRepository;
 import com.packsure.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,9 @@ public class DataInitializer implements CommandLineRunner {
     private UserRepository userRepository;
 
     @Autowired
+    private InspectionRepository inspectionRepository;
+
+    @Autowired
     private RuleRepository ruleRepository;
 
     @Autowired
@@ -24,28 +28,62 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         // 1. Seed Users
-        if (!userRepository.existsByUsername("officer")) {
-            User officer = new User(
+        User officer = userRepository.findByUsername("officer").orElse(null);
+        if (officer == null) {
+            officer = new User(
                 "officer",
                 passwordEncoder.encode("Officer@123"),
-                "Anika Sharma",
+                "Enforcement Officer",
+                "officer@packsure.gov.in",
                 "ROLE_OFFICER",
-                "LM-2026-0142",
-                "Sector 21, Delhi"
+                "Enforcement Circle 1"
             );
+            officer.setEmployeeId("LM-OFF-0101");
+            userRepository.save(officer);
+        } else if ("Anika Sharma".equals(officer.getFullName())) {
+            officer.setFullName("Enforcement Officer");
+            officer.setLocation("Enforcement Circle 1");
+            officer.setEmployeeId("LM-OFF-0101");
+            if (officer.getEmail() == null) officer.setEmail("officer@packsure.gov.in");
             userRepository.save(officer);
         }
 
-        if (!userRepository.existsByUsername("admin")) {
-            User admin = new User(
+        User admin = userRepository.findByUsername("admin").orElse(null);
+        if (admin == null) {
+            admin = new User(
                 "admin",
                 passwordEncoder.encode("Admin@123"),
-                "P. Iyer",
+                "Admin Officer",
+                "admin@packsure.gov.in",
                 "ROLE_ADMIN",
-                "LM-ADM-0001",
-                "Headquarters, New Delhi"
+                "Central Enforcement HQ"
             );
+            admin.setEmployeeId("LM-ADM-0001");
             userRepository.save(admin);
+        } else if ("P. Iyer".equals(admin.getFullName())) {
+            admin.setFullName("Admin Officer");
+            admin.setLocation("Central Enforcement HQ");
+            admin.setEmployeeId("LM-ADM-0001");
+            if (admin.getEmail() == null) admin.setEmail("admin@packsure.gov.in");
+            userRepository.save(admin);
+        }
+
+        userRepository.findAll().forEach(u -> {
+            if (u.getRole() != null && u.getRole().contains("@")) {
+                u.setEmail(u.getRole());
+                u.setRole("ROLE_OFFICER");
+                userRepository.save(u);
+            }
+        });
+
+        final User defaultOfficer = officer;
+        if (defaultOfficer != null) {
+            inspectionRepository.findAll().forEach(i -> {
+                if (i.getUser() == null) {
+                    i.setUser(defaultOfficer);
+                    inspectionRepository.save(i);
+                }
+            });
         }
 
         // 2. Seed Legal Metrology Packaged Commodities Rules 2011

@@ -50,7 +50,7 @@ public class AuthController {
             return ResponseEntity.status(401).body(ApiResponse.error("UNAUTHORIZED", "User not authenticated"));
         }
         AuthResponse.UserDto dto = new AuthResponse.UserDto(
-                user.getId(), user.getUsername(), user.getFullName(), user.getRole(), user.getEmployeeId(), user.getLocation()
+                user.getId(), user.getUsername(), user.getFullName(), user.getEmail(), user.getRole(), user.getEmployeeId(), user.getLocation()
         );
         return ResponseEntity.ok(ApiResponse.ok(dto));
     }

@@ -28,41 +28,45 @@ export default class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="max-w-2xl mx-auto my-12 p-8 bg-white border border-rose-200 rounded-2xl shadow-lg space-y-5 text-center">
-          <div className="w-14 h-14 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
-            <AlertTriangle className="w-8 h-8" />
+        <div className="max-w-2xl mx-auto my-12 p-8 bg-[#111118] border border-rose-500/30 rounded-2xl shadow-2xl space-y-5 text-center">
+          <div className="w-14 h-14 bg-rose-500/15 border border-rose-500/30 text-rose-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+            <AlertTriangle className="w-7 h-7" />
           </div>
 
           <div>
-            <h2 className="text-xl font-bold text-slate-900 font-display">
-              {this.props.title || "Something went wrong in this view"}
+            <h2 className="text-xl font-bold text-white font-display">
+              {this.props.title || "Interface Component Encountered an Issue"}
             </h2>
-            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto leading-relaxed">
-              {this.state.error?.message || "An unexpected error occurred while rendering this component."}
+            <p className="text-xs text-[#C8B89A] mt-1.5 max-w-md mx-auto leading-relaxed">
+              {this.state.error?.message || "An unexpected error occurred while rendering this interface view."}
             </p>
           </div>
 
           {this.state.error && (
-            <div className="bg-slate-900 text-slate-200 p-4 rounded-xl text-left font-mono text-[11px] overflow-x-auto max-h-40">
+            <div className="bg-[#0A0A0F] text-[#F5E8C7] border border-[#252538] p-4 rounded-xl text-left font-mono text-[11px] overflow-x-auto max-h-40">
               <span className="text-rose-400 font-bold block mb-1">
                 {this.state.error.toString()}
               </span>
-              {this.state.errorInfo?.componentStack}
+              <pre className="text-[10px] text-[#8E8271] whitespace-pre-wrap">
+                {this.state.errorInfo?.componentStack}
+              </pre>
             </div>
           )}
 
           <div className="flex items-center justify-center gap-3 pt-2">
             <button
-              onClick={() => window.history.back()}
-              className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl flex items-center gap-1.5 transition"
+              onClick={this.handleReset}
+              className="btn-gold px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer"
             >
-              <ArrowLeft className="w-4 h-4" /> Go Back
+              <RefreshCw className="w-3.5 h-3.5" />
+              Reload View
             </button>
             <button
-              onClick={this.handleReset}
-              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition shadow-sm"
+              onClick={() => window.location.href = "/dashboard"}
+              className="btn-dark px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 cursor-pointer"
             >
-              <RefreshCw className="w-4 h-4" /> Try Again
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Return to Dashboard
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import api from "./api";
+import api, { API_BASE_URL, getImageContentUrl, getReportDownloadUrl } from "./api";
 
 export const inspectionService = {
   async createInspection(location) {
@@ -86,7 +86,11 @@ export const inspectionService = {
   },
 
   getReportDownloadUrl(reportId) {
-    return `http://localhost:8081/api/reports/${reportId}/download`;
+    return getReportDownloadUrl(reportId);
+  },
+
+  getImageContentUrl(imageId) {
+    return getImageContentUrl(imageId);
   },
 
   async verifyReport(reportId) {

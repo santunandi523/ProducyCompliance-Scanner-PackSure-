@@ -1,3 +1,25 @@
+import sys
+import os
+
+# Ensure UTF-8 output on Windows without encoding crashes
+try:
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    if hasattr(sys.stderr, 'reconfigure'):
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
+def safe_print(*args, **kwargs):
+    try:
+        print(*args, **kwargs)
+    except Exception:
+        try:
+            clean_args = [str(a).encode('ascii', errors='replace').decode('ascii') for a in args]
+            print(*clean_args, **kwargs)
+        except Exception:
+            pass
+
 import time
 from typing import List
 from fastapi import FastAPI, File, UploadFile, HTTPException
@@ -120,29 +142,29 @@ async def analyze_package(files: List[UploadFile] = File(...)):
             status = "SUCCESS"
 
         # Output explicit TEMPORARY DEBUG LOG as specified in prompt section 3 & 29
-        print(f"\n------------------------------------")
-        print(f"IMAGE {idx + 1}")
-        print(f"------------------------------------")
-        print(f"IMAGE ID: {img_id}")
-        print(f"IMAGE NAME: {f.filename}")
-        print(f"IMAGE SIZE: {len(file_bytes)} bytes")
-        print(f"IMAGE QUALITY: {quality_res.get('status')} (Score: {quality_res.get('score')})")
-        print(f"OCR TEXT LENGTH: {len(img_text)} chars")
-        print(f"OCR WORD COUNT: {words_count}")
-        print(f"OCR CONFIDENCE: {round(img_avg_conf, 3)}")
-        print(f"NUMBER OF DETECTED DECLARATIONS: {len(extracted_fields)}")
-        print(f"\nFULL OCR TEXT:")
-        print(img_text if img_text else "[EMPTY OCR TEXT]")
-        print(f"\nEXTRACTED CANDIDATES:")
+        safe_print(f"\n------------------------------------")
+        safe_print(f"IMAGE {idx + 1}")
+        safe_print(f"------------------------------------")
+        safe_print(f"IMAGE ID: {img_id}")
+        safe_print(f"IMAGE NAME: {f.filename}")
+        safe_print(f"IMAGE SIZE: {len(file_bytes)} bytes")
+        safe_print(f"IMAGE QUALITY: {quality_res.get('status')} (Score: {quality_res.get('score')})")
+        safe_print(f"OCR TEXT LENGTH: {len(img_text)} chars")
+        safe_print(f"OCR WORD COUNT: {words_count}")
+        safe_print(f"OCR CONFIDENCE: {round(img_avg_conf, 3)}")
+        safe_print(f"NUMBER OF DETECTED DECLARATIONS: {len(extracted_fields)}")
+        safe_print(f"\nFULL OCR TEXT:")
+        safe_print(img_text if img_text else "[EMPTY OCR TEXT]")
+        safe_print(f"\nEXTRACTED CANDIDATES:")
         if image_decls:
             for d in image_decls:
-                print(f"  {d['field']}: {d.get('detectedValue') or d.get('displayValue')}")
+                safe_print(f"  {d['field']}: {d.get('detectedValue') or d.get('displayValue')}")
         else:
-            print("  None")
-        print(f"\nPROCESSING STATUS: {status}")
+            safe_print("  None")
+        safe_print(f"\nPROCESSING STATUS: {status}")
         if reason:
-            print(f"DIAGNOSTIC REASON: {reason}")
-        print(f"------------------------------------\n", flush=True)
+            safe_print(f"DIAGNOSTIC REASON: {reason}")
+        safe_print(f"------------------------------------\n", flush=True)
 
         images_analysis.append({
             "imageId": img_id,
