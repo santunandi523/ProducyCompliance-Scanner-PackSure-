@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { API_BASE_URL } from "@/services/api";
+import { getCustomUsers } from "@/services/userService";
 import { toast } from "sonner";
 
 export default function Login() {
@@ -29,6 +30,8 @@ export default function Login() {
   const [submitting, setSubmitting] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
 
+  const customUsers = typeof window !== "undefined" ? getCustomUsers() : [];
+
   const isCloudHost =
     typeof window !== "undefined" &&
     window.location &&
@@ -36,7 +39,13 @@ export default function Login() {
   const isLocalhostApi = API_BASE_URL.includes("localhost");
   const showCloudNotice = isCloudHost && isLocalhostApi;
 
-  const handleFillCredentials = (role) => {
+  const handleFillCredentials = (role, customUserObj = null) => {
+    if (customUserObj) {
+      setUsername(customUserObj.username);
+      setPassword(customUserObj.password || "");
+      toast.info(`Pre-filled registered officer @${customUserObj.username}`);
+      return;
+    }
     if (role === "admin") {
       setUsername("admin");
       setPassword("Admin@123");
@@ -199,9 +208,9 @@ export default function Login() {
             )}
 
             {/* Quick-fill credential chips */}
-            <div className="mt-5 flex items-center justify-between text-xs">
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-2 text-xs">
               <span className="text-[#8E8271] text-[11px]">Quick Credentials:</span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => handleFillCredentials("admin")}
@@ -216,6 +225,17 @@ export default function Login() {
                 >
                   Officer
                 </button>
+                {customUsers.slice(-3).map((cu) => (
+                  <button
+                    key={cu.id}
+                    type="button"
+                    onClick={() => handleFillCredentials(null, cu)}
+                    className="px-2 py-0.5 rounded-md bg-[#1C1C28] border border-[#7C3AED]/40 text-[#C084FC] hover:border-[#F5C842] hover:text-[#F5C842] text-[11px] font-mono transition-colors"
+                    title={`Registered Officer: @${cu.username}`}
+                  >
+                    @{cu.username}
+                  </button>
+                ))}
               </div>
             </div>
 
