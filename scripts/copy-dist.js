@@ -5,6 +5,9 @@ const srcDir = path.resolve('dist');
 const destDir = path.resolve('backend/src/main/resources/static');
 
 if (fs.existsSync(srcDir)) {
+  if (fs.existsSync(destDir)) {
+    fs.rmSync(destDir, { recursive: true, force: true });
+  }
   fs.mkdirSync(destDir, { recursive: true });
   fs.cpSync(srcDir, destDir, { recursive: true });
   console.log('Successfully bundled frontend dist into backend/src/main/resources/static for single-project deployment!');

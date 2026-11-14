@@ -1,9 +1,28 @@
 import axios from "axios";
 
-// Normalize API base URL: supports VITE_API_BASE_URL, VITE_API_URL or defaults to http://localhost:8081/api
-let rawBase = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:8081/api";
-rawBase = String(rawBase).trim().replace(/\/+$/, "");
-export const API_BASE_URL = rawBase.endsWith("/api") ? rawBase : `${rawBase}/api`;
+// Determine API base URL:
+// 1. Explicit VITE_API_BASE_URL or VITE_API_URL if configured
+// 2. If running on same origin in production (e.g. Spring Boot single-project bundle on port 8081 or cloud container), use relative /api
+// 3. Fallback to local Spring Boot URL for Vite dev server (port 5173)
+const getBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+  if (envUrl) {
+    const trimmed = String(envUrl).trim().replace(/\/+$/, "");
+    return trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
+  }
+
+  if (typeof window !== "undefined" && window.location) {
+    const isViteDev = window.location.port === "5173" || window.location.port === "3000";
+    if (!isViteDev && window.location.origin && window.location.origin !== "null") {
+      // Single-project JAR deployment or reverse-proxied production bundle
+      return `${window.location.origin.replace(/\/+$/, "")}/api`;
+    }
+  }
+
+  return "http://localhost:8081/api";
+};
+
+export const API_BASE_URL = getBaseUrl();
 
 export const getImageContentUrl = (imageId) => {
   if (!imageId) return "";
@@ -46,7 +65,16 @@ api.interceptors.response.use(
       } else if (error.response?.status === 401) {
         message = "Unauthorized (401). Please log in with valid officer credentials.";
       } else if (error.message === "Network Error" || !error.response) {
-        message = `Cannot connect to backend server (${API_BASE_URL}). Please ensure backend service and database are running and reachable.`;
+        const isCloudHost =
+          typeof window !== "undefined" &&
+          window.location &&
+          !["localhost", "127.0.0.1"].includes(window.location.hostname);
+
+        if (isCloudHost && API_BASE_URL.includes("localhost")) {
+          message = `Cannot reach backend: The frontend is deployed to the cloud (${window.location.origin}), but is attempting to call "${API_BASE_URL}". Cloud deployments cannot reach your computer's "localhost". Add VITE_API_BASE_URL in your Vercel project environment variables (or tunnel via ngrok) to connect your live backend.`;
+        } else {
+          message = `Cannot connect to backend server (${API_BASE_URL}). Please ensure PostgreSQL, AI service, and Spring Boot are running and reachable.`;
+        }
       } else {
         message = error.message || "Document analysis or server error";
       }

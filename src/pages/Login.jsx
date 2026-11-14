@@ -1,7 +1,24 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShieldCheck, ArrowRight, ScanLine, FileCheck2, Scale, Lock, ShieldAlert, Sparkles, UserCheck } from "lucide-react";
+import {
+  ShieldCheck,
+  ArrowRight,
+  ScanLine,
+  FileCheck2,
+  Scale,
+  Lock,
+  ShieldAlert,
+  Sparkles,
+  UserCheck,
+  AlertTriangle,
+  Server,
+  Globe,
+  Terminal,
+  X,
+  HelpCircle,
+} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { API_BASE_URL } from "@/services/api";
 import { toast } from "sonner";
 
 export default function Login() {
@@ -10,6 +27,25 @@ export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
+
+  const isCloudHost =
+    typeof window !== "undefined" &&
+    window.location &&
+    !["localhost", "127.0.0.1"].includes(window.location.hostname);
+  const isLocalhostApi = API_BASE_URL.includes("localhost");
+  const showCloudNotice = isCloudHost && isLocalhostApi;
+
+  const handleFillCredentials = (role) => {
+    if (role === "admin") {
+      setUsername("admin");
+      setPassword("Admin@123");
+    } else {
+      setUsername("officer");
+      setPassword("Officer@123");
+    }
+    toast.info(`Pre-filled ${role === "admin" ? "Admin" : "Enforcement Officer"} credentials`);
+  };
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -139,7 +175,51 @@ export default function Login() {
               Enter your officer credentials to access inspection registers and rule screening.
             </p>
 
-            <form onSubmit={handleSubmit} className="mt-7 space-y-4">
+            {/* Cloud deployment alert if API URL still points to localhost */}
+            {showCloudNotice && (
+              <div className="mt-4 p-3.5 rounded-xl border border-[#D4A017]/35 bg-[#D4A017]/10 backdrop-blur-md">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-[#F5C842] shrink-0 mt-0.5" />
+                  <div className="flex-1 text-xs">
+                    <span className="font-bold text-white">Backend Connection Notice:</span>{" "}
+                    <span className="text-[#D4C4A8]">
+                      Frontend is deployed on <code className="text-[#F5C842] font-mono">{window.location.hostname}</code>, but API is targeting <code className="text-[#F5C842] font-mono">{API_BASE_URL}</code>.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowGuideModal(true)}
+                      className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#D4A017]/20 border border-[#D4A017]/40 text-[#F5C842] hover:bg-[#D4A017]/30 text-[11px] font-semibold transition-colors"
+                    >
+                      <Server className="w-3 h-3" />
+                      How to connect live backend →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Quick-fill credential chips */}
+            <div className="mt-5 flex items-center justify-between text-xs">
+              <span className="text-[#8E8271] text-[11px]">Quick Credentials:</span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleFillCredentials("admin")}
+                  className="px-2 py-0.5 rounded-md bg-[#1C1C28] border border-[#2D2D3D] text-[#C8B89A] hover:border-[#D4A017]/50 hover:text-[#F5C842] text-[11px] font-mono transition-colors"
+                >
+                  Admin
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleFillCredentials("officer")}
+                  className="px-2 py-0.5 rounded-md bg-[#1C1C28] border border-[#2D2D3D] text-[#C8B89A] hover:border-[#7C3AED]/50 hover:text-[#C084FC] text-[11px] font-mono transition-colors"
+                >
+                  Officer
+                </button>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="mt-3 space-y-4">
               <div>
                 <label className="text-xs font-semibold text-[#D4C4A8] flex items-center gap-1.5 mb-1.5">
                   <UserCheck className="w-3.5 h-3.5 text-[#D4A017]" />
@@ -203,10 +283,92 @@ export default function Login() {
                   <span className="font-semibold text-white">Protected Regulatory Terminal:</span> Access restricted to authorized personnel. Session activities are cryptographically audited under statutory governance.
                 </div>
               </div>
+
+              <div className="mt-4 flex items-center justify-between text-[11px] text-[#8E8271]">
+                <span className="truncate max-w-[200px] sm:max-w-[240px]">
+                  API: <code className="text-[#C8B89A] font-mono">{API_BASE_URL}</code>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowGuideModal(true)}
+                  className="hover:text-[#F5C842] flex items-center gap-1 transition-colors font-medium text-[#C8B89A]"
+                >
+                  <HelpCircle className="w-3.5 h-3.5 text-[#D4A017]" />
+                  Connection Guide
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Backend Connection & Architecture Guide Modal */}
+      {showGuideModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="w-full max-w-lg bg-[#111118] border border-[#D4A017]/30 rounded-2xl p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowGuideModal(false)}
+              className="absolute top-4 right-4 text-[#8E8271] hover:text-white p-1 rounded-lg hover:bg-[#1C1C28]"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2.5 text-[#F5C842] mb-3">
+              <Server className="w-5 h-5 text-[#F5C842]" />
+              <h3 className="font-display font-bold text-lg text-white">Backend Connection Guide</h3>
+            </div>
+
+            <div className="space-y-4 text-xs text-[#C8B89A]">
+              <div className="p-3.5 rounded-xl bg-[#161622] border border-[#2D2D3D]">
+                <p className="font-semibold text-white mb-1">Why does it say "Cannot connect to backend"?</p>
+                <p className="leading-relaxed">
+                  Vercel or cloud CDN hosts only the React client interface. It does not execute the Java Spring Boot backend, Python AI OCR microservice, or PostgreSQL database. Calling <code className="text-[#F5C842]">http://localhost:8081</code> from an HTTPS cloud host fails because cloud browsers cannot access your local PC.
+                </p>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-white mb-2 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-[#F5C842]" />
+                  Option 1: Quick 1-Minute Live Demo (via ngrok)
+                </h4>
+                <div className="space-y-2 bg-[#0A0A0F] p-3 rounded-xl border border-[#2D2D3D] font-mono text-[11px]">
+                  <p className="text-[#8E8271]"># 1. Start your local stack</p>
+                  <p className="text-white">.\run_all.bat</p>
+                  <p className="text-[#8E8271] mt-2"># 2. Expose Spring Boot port 8081 publicly</p>
+                  <p className="text-white">npx ngrok http 8081</p>
+                  <p className="text-[#8E8271] mt-2"># 3. Add to Vercel Environment Variables:</p>
+                  <p className="text-[#F5C842]">VITE_API_BASE_URL = https://xxxx.ngrok-free.app/api</p>
+                  <p className="text-[#8E8271] mt-2"># 4. In Vercel, click "Redeploy"</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-bold text-white mb-2 flex items-center gap-1.5">
+                  <Terminal className="w-4 h-4 text-[#C084FC]" />
+                  Option 2: Running Full App Locally
+                </h4>
+                <p className="mb-2">If you want to run everything locally without external tunnels:</p>
+                <div className="bg-[#0A0A0F] p-3 rounded-xl border border-[#2D2D3D] font-mono text-[11px] text-white">
+                  Double-click <span className="text-[#F5C842]">run_all.bat</span> in project root, then open <span className="text-[#C084FC]">http://localhost:5173</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-[#252535] flex items-center justify-between">
+                <span className="text-[11px] text-[#8E8271]">
+                  Credentials: <code className="text-white">admin</code> / <code className="text-white">Admin@123</code>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowGuideModal(false)}
+                  className="btn-gold px-4 py-2 rounded-xl font-bold text-xs"
+                >
+                  Understood
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
